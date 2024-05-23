@@ -1,0 +1,251 @@
+CREATE PROCEDURE CrearTablas
+AS
+BEGIN
+    
+-- Inicia una transacción
+    BEGIN TRANSACTION;
+
+    BEGIN TRY
+
+    /*------------------------------------------------------------------------BRU------------------------------------------------------------------------*/
+    CREATE TABLE Producto (
+      id_producto INT PRIMARY KEY AUTO_INCREMENT,
+
+      producto_nombre VARCHAR(100) NOT NULL,
+      producto_descripcion VARCHAR(100),
+      producto_precio DECIMAL(10,2),
+
+      FOREING KEY (id_producto_categoria) 
+      	REFERENCES Producto_categoria(id_producto_categoria),
+      FOREING KEY (id_producto_subcategoria)
+      	REFERENCES Producto_subcategoria(id_producto_subcategoria),
+      FOREING KEY (id_marca) 
+        REFERENCES Producto_marca(id_marca)
+    );
+
+    CREATE TABLE Producto_categoria (
+      id_producto_categoria  INT PRIMARY KEY AUTO_INCREMENT,
+      producto_categoria_detalle  VARCHAR(100)
+    );
+
+    CREATE TABLE Producto_subcategoria (
+      id_producto_subcategoria INT PRIMARY KEY AUTO_INCREMENT,
+      producto_subcategoria_detalle  VARCHAR(100)
+    );
+
+    CREATE TABLE Producto_marca (
+      id_producto_marca INT PRIMARY KEY AUTO_INCREMENT,
+      producto_marca_detalle VARCHAR(100)
+    );
+
+    CREATE TABLE Promoxion_X_Producto (
+      id_promocion INT PRIMARY KEY AUTO_INCREMENT,
+      id_producto INT PRIMARY KEY AUTO_INCREMENT
+    );
+
+    CREATE TABLE Promocion (
+      id_promocion INT PRIMARY KEY AUTO_INCREMENT,
+
+      promo_descripcion VARCHAR(255) NOT NULL,
+      promo_fecha_inicio DATE NOT NULL,
+      promo_fecha_fin DATE NOT NULL,
+
+      FOREIGN KEY (id_regla) REFERENCES Regla_X_Promocion(id_regla)
+    );
+
+    CREATE TABLE Promocion_X_ItemTicket (
+      FOREIGN KEY (id_promocion) REFERENCES Promocion(id_promocion)
+      FOREIGN KEY (id_producto) REFERENCES Promocion(id_producto)
+      FOREIGN KEY (id_ticket) REFERENCES Item_Ticket(id_ticket)
+    );
+
+    CREATE TABLE Regla_X_Promocion (
+      id_promocion INT PRIMARY KEY AUTO_INCREMENT,
+      id_regla INT PRIMARY KEY AUTO_INCREMENT
+    );
+
+    CREATE TABLE Reglas (
+      id_regla INT PRIMARY KEY AUTO_INCREMENT,
+
+      regla_cantidad_aplicable INT NOT NULL,
+      regla_descripcion VARCHAR(255) NOT NULL,
+      regla_cantidad_aplicable_descuento INT NOT NULL,
+      regla_cantidad_maxima INT NOT NULL,
+      regla_misma_marca BOOLEAN NOT NULL,
+      regla_mismo_producto BOOLEAN NOT NULL,
+      regla_descuento_aplicable_prod DECIMAL(1,2) NOT NULL
+      	-- maximo (0.99)
+    );
+
+    CREATE TABLE Descuento (
+      id_descuento INT PRIMARY KEY AUTO_INCREMENT,
+
+      descuento_descripcion VARCHAR(255) NOT NULL,
+      fecha_inicio DATE NOT NULL,
+      fecha_fin DATE NOT NULL,
+      descuento_valor_porcentual_a_aplicar DECIMAL(5, 2) NOT NULL, 
+      	-- Porcentaje de descuento (hasta 999.99)
+      descuento_tope DECIMAL(10, 2) NOT NULL, 
+      	-- Importe máximo del descuento (hasta 99999999.99)
+    );
+
+    CREATE TABLE Supermercado (
+      id_supermercado INT PRIMARY KEY AUTO_INCREMENT,
+
+      FOREIGN KEY (id_super_nombre) REFERENCES Super_Nombre(id_super_nombre)	
+      FOREIGN KEY (id_super_mail) REFERENCES Super_Mail(id_super_mail)
+    );
+
+    CREATE TABLE Super_Nombre(
+      id_super_nombre INT PRIMARY KEY AUTO_INCREMENT,
+      super_nombre VARCHAR(50) NOT NULL
+    );
+
+    CREATE TABLE Super_Mail(
+      id_super_mail INT PRIMARY KEY AUTO_INCREMENT,
+      super_mail VARCHAR(50) NOT NULL
+    );
+    
+    /*------------------------------------------------------------------------BRU------------------------------------------------------------------------*/
+    
+    -- Si todo va bien, se hace commit
+    COMMIT TRANSACTION;
+    END TRY
+
+    BEGIN CATCH
+        -- Si hay un error, se hace rollback
+        ROLLBACK TRANSACTION;
+
+        -- Opcional: Manejo de errores
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+
+    END CATCH
+END;
+
+CREATE PROCEDURE CrearTablas
+AS
+BEGIN
+    
+-- Inicia una transacción
+    BEGIN TRANSACTION;
+
+    BEGIN TRY
+		
+    --rellenamos tablas
+    
+    
+    /*------------------------------------------------------------------------BRU------------------------------------------------------------------------*/
+    --Creo que hay que agregar aparte segun que ID tenga cada cosa vaya agregando
+    
+    INSERT INTO Producto(producto_nombre, producto_descripcion, producto_precio)
+    SELECT PRODUCTO_NOMBRE, PRODUCTO_DESCRIPCION, PRODUCTO_PRECIO
+    FROM dbo.Maestra
+    
+    /*
+     Que pasa con estas variables?
+     Se rellenan solas? Se completan solas?
+     		id_producto INT PRIMARY KEY AUTO_INCREMENT,
+      	FOREING KEY (id_producto_categoria) REFERENCES Producto_categoria(id_producto_categoria),
+      	FOREING KEY (id_producto_subcategoria) REFERENCES Producto_subcategoria(id_producto_subcategoria),
+      	FOREING KEY (id_marca) REFERENCES Producto_marca(id_marca)
+    */
+    
+    INSERT INTO Producto_categoria(producto_categoria_detalle)
+		SELECT PRODUCTO_CATEGORIA
+    FROM dbo.Maestra
+		
+    INSERT INTO Producto_subcategoria(producto_subcategoria _detalle)
+    SELECT PRODUCTO_SUB_CATEGORIA
+    FROM dbo.Maestra
+
+    INSERT INTO Producto_marca(producto_marca_detalle)
+		SELECT PRODUCTO_MARCA
+    FROM dbo.Maestra
+    
+    INSERT INTO Promoxion_X_Producto
+		--esta es una de medio, no se que pingo ponerle (todavia)
+    
+    INSERT INTO Promocion(descripcion, promo_fecha_inicio, promo_fecha_fin)
+		SELECT PROMOCION_DESCRIPCION, PROMOCION_FECHA_INICIO, PROMOCION_FECHA_FIN
+    FROM dbo.Maestra
+    
+    INSERT INTO Promocion_X_ItemTicket
+    --esta es una de medio, no se que pingo ponerle (todavia)
+    
+    INSERT INTO Regla_X_Promocion
+    --esta es una de medio, no se que pingo ponerle (todavia)
+    
+    INSERT INTO Reglas(
+      	regla_descripcion,	
+      	regla_cantidad_aplicable, 
+      	regla_cantidad_aplicable_descuento,
+      	regla_cantidad_maxima,
+      	regla_misma_marca,
+      	regla_mismo_producto,
+      	regla_descuento_aplicable_prod
+      	)
+		SELECT
+    	REGLA_DESCRIPCION,
+      REGLA_CANT_APLICABLE,
+      REGLA_CANT_APLICA_DESCUENTO,
+      REGLA_CANT_MAX_PROD,
+      REGLA_APLICA_MISMA_MARCA,
+      REGLA_APLICA_MISMO_PROD,
+      REGLA_DESCUENTO_APLICABLE_PROD
+		FROM dbo.Maestra
+    
+    INSERT INTO Descuento(
+      	descuento_descripcion,
+      	fecha_inicio,
+      	fecha_fin,
+      	descuento_valor_porcentual_a_aplicar,
+      	descuento_tope
+    		)
+		SELECT
+    		--DESCUENTO_CODIGO este esta en la maestra pero creo que queda mejor que ya nosotros lo pongamos solo (preguntar)
+				DESCUENTO_DESCRIPCION,
+				DESCUENTO_FECHA_INICIO,
+				DESCUENTO_FECHA_FIN,
+				DESCUENTO_PORCENTAJE_DESC,
+				DESCUENTO_TOPE
+    FROM dbo.Maestra
+    
+    INSERT INTO Supermercado
+    --Nada porque la maestra no dice ni pingo del super (creo que tiene que ver con sucursales nada mas, mas adelante vemos)
+
+    INSERT INTO Super_Nombre
+		--leer Supermercado
+    
+    INSERT INTO Super_Mail
+    --leer Supermercado
+    
+    /*------------------------------------------------------------------------BRU------------------------------------------------------------------------*/
+    
+    -- Si todo va bien, se hace commit
+    COMMIT TRANSACTION;
+    END TRY
+
+    BEGIN CATCH
+        -- Si hay un error, se hace rollback
+        ROLLBACK TRANSACTION;
+
+        -- Opcional: Manejo de errores
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+
+    END CATCH
+END;
+
+
+
+
+
+
+
+
+
+
+

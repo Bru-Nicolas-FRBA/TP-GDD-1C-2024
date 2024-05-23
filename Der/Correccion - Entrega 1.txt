@@ -1,0 +1,10 @@
+Hola.
+
+Su Trabajo de Gestión de Datos ha sido corregido.
+
+
+Su TP presenta los siguientes problemas:
+Deben modelar Supermecado
+Deben modelar estado de envio.
+Deben modelar la entidad Tipo_Caja.   
+Entre la entidad promoción y tiecket_item debe haber una tabla intermedia, no una relación de promoción a item_ticket.
