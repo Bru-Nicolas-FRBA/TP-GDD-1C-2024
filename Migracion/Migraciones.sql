@@ -8,9 +8,7 @@
         --crear tabla
         CREATE TABLE dbo.Producto_categoria (
           id_producto_categoria INT PRIMARY KEY IDENTITY(1,1),
-          producto_categoria_detalle VARCHAR(100) NOT NULL,
-
-          CONSTRAINT UQ_Producto_categoria_detalle UNIQUE (producto_categoria_detalle)
+          producto_categoria_detalle VARCHAR(100) UNIQUE NOT NULL,
         );
         --rellenar tabla
         INSERT INTO dbo.Producto_categoria(producto_categoria_detalle)
@@ -37,9 +35,7 @@
         --crear tabla
          CREATE TABLE dbo.Producto_subcategoria (
             id_producto_subcategoria INT PRIMARY KEY IDENTITY(1,1),
-            producto_subcategoria_detalle VARCHAR(100),
-
-            CONSTRAINT UQ_Producto_subcategoria_detalle UNIQUE (producto_subcategoria_detalle)
+            producto_subcategoria_detalle UNIQUE VARCHAR(100),
           );
         --rellenar tabla
         INSERT INTO dbo.Producto_subcategoria(producto_subcategoria_detalle)
@@ -65,9 +61,7 @@
         --crear tabla
         CREATE TABLE dbo.Producto_marca (
           id_producto_marca INT PRIMARY KEY IDENTITY(1,1),
-          producto_marca_detalle VARCHAR(100),
-
-          CONSTRAINT UQ_Producto_marca_detalle UNIQUE (producto_marca_detalle)
+          producto_marca_detalle UNIQUE VARCHAR(100),
          );
         --rellenar tabla
         INSERT INTO dbo.Producto_marca(producto_marca_detalle)
@@ -93,9 +87,7 @@
         --crear tabla
          CREATE TABLE dbo.Cliente_Contacto (
           id_cliente_contacto INT PRIMARY KEY IDENTITY(1,1),
-          cliente_contacto_numero VARCHAR(20),
-
-          CONSTRAINT UQ_cliente_contacto_numero UNIQUE (cliente_contacto_numero)
+          cliente_contacto_numero UNIQUE VARCHAR(20),
         );
         --rellenar tabla
         INSERT INTO dbo.Cliente_Contacto(cliente_contacto_numero)
@@ -121,9 +113,7 @@
         --crear tabla
         CREATE TABLE dbo.Tipo_medio_de_pago (
           id_tipo_medio_pago INT PRIMARY KEY IDENTITY(1,1),
-          tipo_medio_pago_nombre VARCHAR(255) NOT NULL,
-
-          CONSTRAINT UQ_tipo_medio_pago_nombre UNIQUE (tipo_medio_pago_nombre)
+          tipo_medio_pago_nombre VARCHAR(255) UNIQUE NOT NULL,
         );
         --rellenar tabla
         INSERT INTO dbo.Tipo_medio_de_pago(tipo_medio_pago_nombre)
@@ -201,7 +191,7 @@
         CREATE TABLE dbo.Regla (
           id_regla INT PRIMARY KEY IDENTITY(1,1),
           regla_cantidad_aplicable INT NOT NULL,
-          regla_descripcion VARCHAR(255) NOT NULL,
+          regla_descripcion VARCHAR(255) UNIQUE NOT NULL,
           regla_cantidad_aplicable_descuento INT NOT NULL,
           regla_cantidad_maxima INT NOT NULL,
           regla_misma_marca BOOLEAN NOT NULL,
@@ -305,9 +295,7 @@
         --crear tabla
         CREATE TABLE dbo.Tipo_Caja(
           id_tipo_caja INT PRIMARY KEY IDENTITY(1,1),
-          tipo_caja_descripcion VARCHAR(50),
-
-          CONSTRAINT UQ_tipo_caja_descripcion UNIQUE (tipo_caja_descripcion)
+          tipo_caja_descripcion VARCHAR(50) UNIQUE NOT NULL,
         );
         --rellenar tabla
         INSERT INTO dbo.Tipo_Caja(tipo_caja_descripcion)
@@ -359,9 +347,7 @@
         --crear tabla
          CREATE TABLE dbo.Provincia(
           id_provincia INT PRIMARY KEY IDENTITY(1,1),
-          provincia_nombre VARCHAR(100),
-
-          CONSTRAINT UQ_provincia_nombre UNIQUE (provincia_nombre)
+          provincia_nombre VARCHAR(100) UNIQUE NOT NULL,
         );
 
         --rellenar tabla
@@ -395,9 +381,7 @@
         --crear tabla
           CREATE TABLE dbo.Localidad(
             id_localidad INT PRIMARY KEY IDENTITY(1,1),
-            localidad_nombre VARCHAR(100),
-
-            CONSTRAINT UQ_localidad_nombre UNIQUE (localidad_nombre)
+            localidad_nombre VARCHAR(100) UNIQUE NOT NULL,
           );
 
         --rellenar tabla
@@ -430,8 +414,8 @@
       BEGIN TRY
         --crear tabla
         CREATE TABLE dbo.Promocion (
-          id_promocion INT PRIMARY KEY IDENTITY(1,1),
-          promo_descripcion VARCHAR(255) NOT NULL,
+          id_promocion INT PRIMARY KEY,
+          promo_descripcion VARCHAR(255) UNIQUE NOT NULL,
           promo_fecha_inicio DATE NOT NULL,
           promo_fecha_fin DATE NOT NULL,
         );
@@ -499,13 +483,13 @@
           id_sucursal        
         )
         SELECT(
-          m.EMPLEADO_NOMBRE
-          m.EMPLEADO_APELLIDO
-          m.EMPLEADO_DNI
-          m.EMPLEADO_FECHA_REGISTRO
-          m.EMPLEADO_TELEFONO
-          m.EMPLEADO_MAIL
-          m.EMPLEADO_FECHA_NACIMIENTO
+          m.EMPLEADO_NOMBRE,
+          m.EMPLEADO_APELLIDO,
+          m.EMPLEADO_DNI,
+          m.EMPLEADO_FECHA_REGISTRO,
+          m.EMPLEADO_TELEFONO,
+          m.EMPLEADO_MAIL,
+          m.EMPLEADO_FECHA_NACIMIENTO,
           s.id_sucural -- la id la generamos en la tabla Sucursal
         )
         FROM dbo.Maestra m
@@ -587,14 +571,15 @@
         --rellenar tabla
         INSERT INTO (
           id_promocion,
-        	id_producto)
+        	id_producto
+        )
         SELECT(
           (SELECT SUBSTRING_INDEX(m2.PRODUCTO_NOMBRE, ':', -1) FROM dbo.Maestra m2) AS prod_nombre,
           m.PROMO_CODIGO
         )
         FROM dbo.Maestra m
           JOIN dbo.Promocion p1 ON (prod_nombre = p1.id_promocion)
-          JOIN dbo.Producto p2 ON (PROMO_CODIGO = p2.id_producto)
+          JOIN dbo.Producto p2 ON (m.PROMO_CODIGO = p2.id_producto)
         WHERE prod_nombre IS NOT NULL
           AND PROMO_CODIGO IS NOT NULL
         PRINT 'Migración de migrar_promocion_x_producto terminada';
@@ -608,7 +593,13 @@
       END CATCH
   END;
 ------------------------------------------------------------------------------------------------------------------------------------------------
-       CREATE TABLE Envio (
+CREATE PROCEDURE dbo.migrar_envio
+AS
+BEGIN   
+    BEGIN TRANSACTION;
+    BEGIN TRY
+      --crear tabla
+      CREATE TABLE dbo.Envio (
         id_envio INT PRIMARY KEY IDENTITY(1,1),
         id_ticket INT,
         id_cliente INT,
@@ -623,8 +614,50 @@
         CONSTRAINT FK_Envio_Ticket FOREIGN KEY (id_ticket) REFERENCES Ticket(id_ticket),
         CONSTRAINT FK_Envio_Cliente FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente)
       );
-  ------------------------------------------------------------------------------------------------------------------------------------------------
-      CREATE TABLE Regla_X_Promocion (
+      --rellenar tabla
+      INSERT INTO dbo.Envio (
+        t.id_ticket,  -- en la tabla de Ticket
+        c.id_cliente, -- en la tabla de Cliente
+        m.envio_fecha_programada,
+        m.envio_horario_inicio,
+        m.envio_horario_fin,
+        m.envio_fecha_entrega,
+        m.envio_estado,
+        m.envio_costo
+      )
+      SELECT(
+        ENVIO_FECHA_PROGRAMADA,
+        ENVIO_HORA_INICIO,
+        ENVIO_HORA_FIN,
+        ENVIO_FECHA_ENTREGA,
+        ENVIO_ESTADO,
+        ENVIO_COSTO
+      )
+      FROM dbo.Maestra m
+        JOIN dbo.Ticket t ON (t.id_ticket = TICKET_NUMERO)
+        JOIN dbo.Cliente c ON (c.cliente_nombre = m.CLIENTE_NOMBRE)
+      WHERE ENVIO_HORA_INICIO IS NOT NULL,
+        ENVIO_HORA_FIN IS NOT NULL,
+        ENVIO_FECHA_ENTREGA IS NOT NULL,
+        ENVIO_COSTO IS NOT NULL
+      PRINT 'Migración de migrar_envio terminada';
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;      
+------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE dbo.migrar_regla_x_promocion
+AS
+BEGIN   
+    BEGIN TRANSACTION;
+    BEGIN TRY
+      --crear tabla
+      CREATE TABLE dbo.Regla_X_Promocion (
         id_promocion INT,
         id_regla INT,
 
@@ -633,80 +666,285 @@
         CONSTRAINT FK_Regla_X_Promocion_Promocion FOREIGN KEY (id_promocion) REFERENCES Promocion(id_promocion),
         CONSTRAINT FK_Regla_X_Promocion_Regla FOREIGN KEY (id_regla) REFERENCES Regla(id_regla)
       );
-  ------------------------------------------------------------------------------------------------------------------------------------------------
-      CREATE TABLE Domicilio (
+      --rellenar tabla
+      INSERT INTO dbo.Regla_X_Promocion(
+        id_promocion,
+        id_regla,
+      )
+      SELECT(
+        p.id_promocion,
+        r.id_regla
+      )
+      FROM dbo.Maestra m
+        JOIN dbo.Promocion p ON (p.promo_descripcion = m.PROMOCION_DESCRIPCION)
+        JOIN dbo.Regla r ON (r.regla_descripcion = m.REGLA_DESCRIPCION)
+      WHERE p.id_promocion IS NOT NULL
+        AND r.id_regla IS NOT NULL
+      PRINT 'Migración de migrar_regla_x_promocion terminada';
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE dbo.migrar_domicilio
+AS
+BEGIN   
+    BEGIN TRANSACTION;
+    BEGIN TRY
+      --crear tabla
+      CREATE TABLE dbo.Domicilio (
         id_domicilio INT PRIMARY KEY IDENTITY(1,1),
-        id_localidad INT,
-        id_provincia INT,
-        domicilio_calle VARCHAR(255),
-        domicilio_numero INT,
-        domicilio_detalle_piso VARCHAR(100),
+        id_localidad INT NOT NULL,
+        id_provincia INT NOT NULL,
+        domicilio_calle VARCHAR(255) NOT NULL,
+        domicilio_numero INT NOT NULL,
+        --domicilio_detalle_piso VARCHAR(100),
+        --domicilio_departamento VARCHAR(100)
 
         CONSTRAINT FK_Domicilio_Localidad FOREIGN KEY (id_localidad) REFERENCES Localidad(id_localidad),
         CONSTRAINT FK_Domicilio_Provincia FOREIGN KEY (id_provincia) REFERENCES Provincia(id_provincia)
       );
-  ------------------------------------------------------------------------------------------------------------------------------------------------
-
-      CREATE TABLE Sucursal (
-        id_sucursal INT PRIMARY KEY IDENTITY(1,1),
+      --rellenar tabla
+      INSERT INTO dbo.Domicilio(
+        id_localidad,
+        id_provincia,
+        domicilio_calle,
+        domicilio_numero
+        --domicilio_detalle_piso,
+        --domicilio_departamento
+      )
+      SELECT(
+        l.id_localidad,
+        p.id_provincia.
+        (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) AS DOMICILIO_CALLE,
+        (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) AS DOMICILIO_NUMERO
+      )
+      FROM dbo.Maestra m
+        JOIN dbo.Provincia p ON (m.SUCURSAL_PROVINCIA = p.provincia_nombre AND m.SUPER_PROVINCIA = p.provincia_nombre)       
+        JOIN dbo.Localidad l ON (m.SUCURSAL_LOCALIDAD = l.localidad_nombre AND m.SUPER_LOCALIDAD = l.localidad_nombre)
+      WHERE l.id_localidad IS NOT NULl
+        AND p.id_provincia IS NOT NULL
+        AND DOMICILIO_CALLE IS NOT NULL
+        AND DOMICILIO_NUMERO IS NOT NULL
+      PRINT 'Migración de migrar_domicilio terminada';
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE dbo.migrar_sucursal
+AS
+BEGIN
+    BEGIN TRANSACTION;
+    BEGIN TRY
+      --crear tabla
+      CREATE TABLE dbo.Sucursal (
+        id_sucursal INT PRIMARY KEY,
         id_domicilio INT,
         id_supermercado INT,
-        sucursal_nombre VARCHAR(255) UNIQUE NOT NULL,
-
+        
         CONSTRAINT FK_Sucursal_Domicilio FOREIGN KEY (id_domicilio) REFERENCES Domicilio(id_domicilio),
         CONSTRAINT FK_Sucursal_Supermercado FOREIGN KEY (id_supermercado) REFERENCES Supermercado(super_id)
       );
-  ------------------------------------------------------------------------------------------------------------------------------------------------
-      CREATE TABLE Cliente (
-        id_cliente INT PRIMARY KEY IDENTITY(1,1),
-        dni INT,
-        id_domicilio INT,
-        id_cliente_contacto INT,
-        cliente_nombre VARCHAR(100),
-        cliente_apellido VARCHAR(100),
-        cliente_fecha_registro DATE,
-        cliente_mail VARCHAR(255) UNIQUE,
-        cliente_fecha_nacimiento DATE,
+      --rellenar tablas
+      INSERT INTO dbo.Sucursal(
+        id_sucursal --esto creo que es el ID porque tiene numeracion pre establecida
+        id_domicilio,
+        id_supermercado,
+      )
+      SELECT(
+        (SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1) FROM dbo.Maestra m2) AS ID_SUCURSAL,
+        d.id_domicilio,
+        s.super_id
+      )
+      FROM dbo.Maestra m 
+        JOIN dbo.Supermercado s ON (
+          m.SUPER_RAZON_SOC = s.super_razon_social
+          AND m.SUPER_CUIT = s.super_cuit
+          AND m.SUPER_IIBB = s.super_cuit
+          AND m.SUPER_FECHA_INI_ACTIVIDAD = s.super_fecha_inicio_actividad
+          AND m.SUPER_CONDICION_FISCAL = s.super_condicion_fiscal
+        )
+        JOIN dbo.Provincia p ON (
+          m.SUCURSAL_PROVINCIA = p.provincia_nombre 
+          AND m.SUPER_PROVINCIA = p.provincia_nombre
+        )       
+        JOIN dbo.Localidad l ON (
+          m.SUCURSAL_LOCALIDAD = l.localidad_nombre 
+          AND m.SUPER_LOCALIDAD = l.localidad_nombre
+        )
+        JOIN dbo.Domicilio d ON (
+          l.id_localidad = d.id_localidad
+          AND p.id_provincia = d.id_provincia
+          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) = d.domicilio_calle
+          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) = d.domicilio_numero
+        )
+      WHERE ID_SUCURSAL IS NOT NULL,
+        d.id_domicilio IS NOT NULL,
+        s.super_id IS NOT NULL
+      PRINT 'Migración de migrar_sucursal terminada';
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE dbo.migrar_cliente
+  AS
+  BEGIN   
+      BEGIN TRANSACTION;
+      BEGIN TRY
+        --crear tabla
+        CREATE TABLE dbo.Cliente(
+          id_cliente INT PRIMARY KEY IDENTITY(1,1),
+          cliente_dni INT,
+          cliente_id_domicilio INT,
+          cliente_id_contacto INT,
+          cliente_nombre VARCHAR(100),
+          cliente_apellido VARCHAR(100),
+          cliente_fecha_registro DATE,
+          cliente_mail VARCHAR(255) UNIQUE,
+          cliente_fecha_nacimiento DATE,
 
-        CONSTRAINT FK_Cliente_Domicilio FOREIGN KEY (id_domicilio) REFERENCES Domicilio(id_domicilio),
-        CONSTRAINT FK_Cliente_Cliente_Contacto FOREIGN KEY (id_cliente_contacto) REFERENCES Cliente_Contacto(id_cliente_contacto)		
-      );
-  ------------------------------------------------------------------------------------------------------------------------------------------------
-      CREATE TABLE Medio_de_pago (
-        id_medio_pago INT PRIMARY KEY IDENTITY(1,1),
-        id_tipo_medio_pago INT,
-        id_entidad_bancaria INT,
-        medio_de_pago_nombre VARCHAR(255),
+          CONSTRAINT FK_Cliente_Domicilio FOREIGN KEY (cliente_id_domicilio) REFERENCES Domicilio(id_domicilio),
+          CONSTRAINT FK_Cliente_Cliente_Contacto FOREIGN KEY (cliente_id_contacto) REFERENCES Cliente_Contacto(id_cliente_contacto)		
+        );
+        --rellenar tabla
+        INSERT INTO dbo.Cliente(
+          cliente_dni,
+          cliente_id_domicilio,
+          cliente_id_contacto,
+          cliente_nombre,
+          cliente_apellido,
+          cliente_fecha_registro,
+          cliente_mail,
+          cliente_fecha_nacimiento,
+        )
+        SELECT(
+          m.CLIENTE_DNI
+          d.id_domicilio --usando CLIENTE_DOMICILIO / CLIENTE_LOCALIDAD / CLIENTE_PROVINCIA
+          c.id_cliente_contacto -- usando m.CLIENTE_TELEFONO
+          m.CLIENTE_NOMBRE
+          m.CLIENTE_APELLIDO
+          m.CLIENTE_FECHA_REGISTRO
+          m.CLIENTE_MAIL
+          m.CLIENTE_FECHA_NACIMIENTO
+        )
+        FROM dbo.Maestra m
+          JOIN dbo.Cliente_Contacto c ON(
+            m.CLIENTE_TELEFONO = c.cliente_contacto_numero
+          )
+          JOIN dbo.Provincia p ON (
+            m.CLIENTE_PROVINCIA = p.provincia_nombre 
+            AND m.CLIENTE_PROVINCIA = p.provincia_nombre
+          )       
+          JOIN dbo.Localidad l ON (
+            m.CLIENTE_LOCALIDAD = l.localidad_nombre 
+            AND m.CLIENTE_LOCALIDAD = l.localidad_nombre
+          )
+          JOIN dbo.Domicilio d ON (
+            l.id_localidad = d.id_localidad
+            AND p.id_provincia = d.id_provincia
+            AND (SELECT REGEXP_REPLACE(m2.CLIENTE_DOMICILIO, '[0-9]', '') FROM dbo.Maestra m2) = d.domicilio_calle
+            AND (SELECT REGEXP_REPLACE(m3.CLIENTE_DOMICILIO, '[^0-9]', '') FROM dbo.Maestra m3) = d.domicilio_numero
+          )
+        WHERE m.CLIENTE_DNI IS NOT NULL
+          AND d.id_domicilio IS NOT NULL
+          AND c.id_cliente_contacto IS NOT NULL
+          AND m.CLIENTE_NOMBRE IS NOT NULL
+          AND m.CLIENTE_APELLIDO IS NOT NULL
+          AND m.CLIENTE_MAIL IS NOT NULL
+        PRINT 'Migración de migrar_cliente terminada';
+      COMMIT TRANSACTION;
+      END TRY
+      BEGIN CATCH
+          ROLLBACK TRANSACTION;
+          DECLARE @ErrorMessage NVARCHAR(4000);
+          SET @ErrorMessage = ERROR_MESSAGE();
+          RAISERROR(@ErrorMessage, 16, 1);
+      END CATCH
+  END;
 
-        CONSTRAINT FK_Medio_de_pago_Tipo_medio_de_pago FOREIGN KEY (id_tipo_medio_pago) REFERENCES Tipo_medio_de_pago(id_tipo_medio_pago),
-        CONSTRAINT FK_Medio_de_pago_Entidad_bancaria FOREIGN KEY (id_entidad_bancaria) REFERENCES Medio_de_pago_X_Entidad_bancaria(id_entidad_bancaria)
-      );
-  ------------------------------------------------------------------------------------------------------------------------------------------------
-      CREATE TABLE Medio_de_pago_x_entidad_bancaria (
-        id_entidad_bancaria INT,
-        id_medio_pago INT,
 
-       CONSTRAINT PK_Medio_de_pago_x_entidad_bancaria PRIMARY KEY (id_entidad_bancaria, id_medio_pago),
-
-        CONSTRAINT FK_Medio_de_pago_x_entidad_bancaria_Entidad_Bancaria FOREIGN KEY (id_entidad_bancaria) REFERENCES Entidad_Bancaria(id_entidad_bancaria),
-        CONSTRAINT FK_Medio_de_pago_x_entidad_bancaria_Tipo_medio_de_pago FOREIGN KEY (id_medio_pago) REFERENCES Tipo_medio_de_pago(id_tipo_medio_pago)
-      );
   ------------------------------------------------------------------------------------------------------------------------------------------------
-      CREATE TABLE Producto (
-        id_producto INT PRIMARY KEY IDENTITY(1,1),
-        producto_nombre VARCHAR(100) NOT NULL,
-        producto_descripcion VARCHAR(100),
-        producto_precio DECIMAL(10,2),
-        id_producto_categoria INT,
-        id_producto_subcategoria INT,
-        id_marca INT,
+  CREATE PROCEDURE dbo.migrar_producto
+  AS
+  BEGIN   
+      BEGIN TRANSACTION;
+      BEGIN TRY
+        --crear tabla
+        CREATE TABLE dbo.Producto (
+          id_producto INT PRIMARY KEY IDENTITY(1,1),
+          producto_nombre VARCHAR(100) NOT NULL,
+          producto_descripcion VARCHAR(100),
+          producto_precio DECIMAL(10,2),
+          id_producto_categoria INT,
+          id_producto_subcategoria INT,
+          id_marca INT,
 
-        CONSTRAINT FK_Producto_Producto_categoria FOREIGN KEY (id_producto_categoria) REFERENCES Producto_categoria(id_producto_categoria),
-        CONSTRAINT FK_Producto_Producto_subcategoria FOREIGN KEY (id_producto_subcategoria) REFERENCES Producto_subcategoria(id_producto_subcategoria),
-        CONSTRAINT FK_Producto_Producto_marca FOREIGN KEY (id_marca) REFERENCES Producto_marca(id_producto_marca)
-      );
-  ------------------------------------------------------------------------------------------------------------------------------------------------
-      CREATE TABLE Promocion_X_ItemTicket (
+          CONSTRAINT FK_Producto_Producto_categoria FOREIGN KEY (id_producto_categoria) REFERENCES Producto_categoria(id_producto_categoria),
+          CONSTRAINT FK_Producto_Producto_subcategoria FOREIGN KEY (id_producto_subcategoria) REFERENCES Producto_subcategoria(id_producto_subcategoria),
+          CONSTRAINT FK_Producto_Producto_marca FOREIGN KEY (id_marca) REFERENCES Producto_marca(id_producto_marca)
+        );
+        --rellenar tabla
+        INSERT INTO dbo.Producto(
+          producto_nombre,
+          producto_descripcion,
+          producto_precio,
+          id_producto_categoria,
+          id_producto_subcategoria,
+          id_marca,
+        )
+        SELECT(
+          m.PRODUCTO_NOMBRE,
+          m.PRODUCTO_DESCRIPCION,
+          m.PRODUCTO_PRECIO,
+          c.id_producto_categoria,
+          s.id_producto_subcategoria,
+          mk.id_marca
+        )
+        FROM dbo.Maestra m --revisar si estas uniones estan vien porque no me fio un pingo
+          JOIN dbo.Producto_categoria c ON (m.PRODUCTO_CATEGORIA = c.producto_categoria_detalle)
+          JOIN dbo.Producto_subcategoria s ON (m.PRODUCTO_SUB_CATEGORIA = s.producto_subcategoria_detalle)
+          JOIN dbo.Producto_marca mk ON (m.PRODUCTO_MARCA = s.producto_marca_detalle)
+        WHERE m.PRODUCTO_NOMBRE IS NOT NULL
+          AND m.PRODUCTO_DESCRIPCION IS NOT NULL
+          AND m.PRODUCTO_PRECIO IS NOT NULL
+          AND c.id_producto_categoria IS NOT NULL
+          AND mk.id_marca IS NOT NULL
+        PRINT 'Migración de migrar_producto terminada';
+      COMMIT TRANSACTION;
+      END TRY
+      BEGIN CATCH
+          ROLLBACK TRANSACTION;
+          DECLARE @ErrorMessage NVARCHAR(4000);
+          SET @ErrorMessage = ERROR_MESSAGE();
+          RAISERROR(@ErrorMessage, 16, 1);
+      END CATCH
+  END;
+  
+------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE PROCEDURE dbo.migrar_promoxion_x_item_ticket
+AS
+BEGIN   
+    BEGIN TRANSACTION;
+    BEGIN TRY
+      --crear tabla
+      CREATE TABLE dbo.Promocion_X_Item_Ticket (--
         id_promocion INT,
         id_producto INT,
         id_ticket INT,
@@ -717,8 +955,37 @@
         CONSTRAINT FK_Promocion_X_ItemTicket_Producto FOREIGN KEY (id_producto) REFERENCES Producto(id_producto),
         CONSTRAINT FK_Promocion_X_ItemTicket_Item_Ticket FOREIGN KEY (id_ticket) REFERENCES Item_Ticket(id_ticket)      
       );
-  ------------------------------------------------------------------------------------------------------------------------------------------------
-      CREATE TABLE Ticket_X_Medio_De_Pago_Aplicado(
+      --rellenar tabla
+      INSERT INTO dbo.Promocion_X_Item_Ticket(
+        id_promocion,
+        id_producto,
+        id_ticket,
+      )
+      SELECT(
+        p.id_promocion,
+        (SELECT SUBSTRING_INDEX(m2.PRODUCTO_NOMBRE, ':', -1) FROM dbo.Maestra m2) AS id_prod,
+        t.id_ticket 
+      )
+      FROM dbo.Maestra m
+        JOIN dbo.Promocion p ON (m.PROMO_CODIGO = p.id_promocion)
+        JOIN dbo.Ticket t ON (m.TICKET_NUMERO = t.id_ticket) 
+      WHERE p.id_promocionIS NOT NULL,
+        AND id_prod IS NOT NULL,
+        AND t.id_ticket IS NOT NULL
+      PRINT 'Migración de migrar_promoxion_x_item_ticket terminada';
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+      --
+      CREATE TABLE Ticket_X_Medio_De_Pago_Aplicado(--
         id_medio_de_pago_aplicado INT,
         id_ticket INT PRIMARY KEY IDENTITY(1,1),
         id_tipo_comprobante INT,
@@ -732,7 +999,7 @@
         CONSTRAINT FK_Ticket_X_Medio_De_Pago_Aplicado_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES Sucursal (id_sucursal)
       );
   ------------------------------------------------------------------------------------------------------------------------------------------------
-
+      --
       CREATE TABLE Medio_de_pago_aplicado (
         id_medio_pago_aplicado  INT PRIMARY KEY IDENTITY(1,1),
         id_medio_pago INT,
@@ -752,8 +1019,8 @@
       );
 
   ------------------------------------------------------------------------------------------------------------------------------------------------
-
-      CREATE TABLE dbo.Item_Ticket(
+      --
+      CREATE TABLE dbo.Item_Ticket(--
         id_producto INT,
         id_ticket INT,
         id_tipo_comprobante INT,
@@ -770,6 +1037,30 @@
         CONSTRAINT FK_Item_Ticket_id_promocion FOREIGN KEY (id_promocion) REFERENCES dbo.Promocion (id_promocion)
       )
   ------------------------------------------------------------------------------------------------------------------------------------------------
+      --
+      CREATE TABLE Ticket(
+        id_ticket INT,
+        id_tipo_comprobante INT --podría ser nosé 1,2 o 3, verlo bien,  
+        id_sucursal INT,
+
+        ticket_fecha_hora DATE NOT NULL,
+        ticket_subtotal INT,
+        ticket_total INT,
+        ticket_monto_total_promociones_aplicadas INT,
+        ticket_monto_total_descuentos_aplicados INT,
+
+        CONSTRAINT PK_Ticket_id_ticket PRIMARY KEY AUTO_INCREMENT (id_ticket),
+        CONSTRAINT PK_Ticket_id_tipo_comprobante PRIMARY KEY (id_tipo_comprobante),
+        CONSTRAINT PK_Ticket_id_sucursal PRIMARY KEY (id_sucursal)
+
+        CONSTRAINT FK_Ticket_id_tipo_comprobante FOREIGN KEY(id_tipo_comprobante) REFERENCES Tipo_Comprobante (id_tipo_comprobante),
+        CONSTRAINT FK_Ticket_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES Sucursal (id_sucursal),
+        CONSTRAINT FK_Ticket_id_caja FOREIGN KEY (id_caja) REFERENCES Caja (id_caja),
+        CONSTRAINT FK_Ticket_empleado FOREIGN KEY (id_empleado) REFERENCES Empleado (id_empleado)
+      )
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------
+  
   /*
   CREATE PROCEDURE dbo.migrar_
   AS
