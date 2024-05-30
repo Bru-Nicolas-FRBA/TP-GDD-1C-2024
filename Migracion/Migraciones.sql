@@ -957,7 +957,6 @@ BEGIN
         RAISERROR(@ErrorMessage, 16, 1);
     END CATCH
 END;
-
 ------------------------------------------------------------------------------------------------------------------------------------------------
 CREATE PROCEDURE dbo.migrar_promoxion_x_item_ticket
 AS
@@ -1012,12 +1011,12 @@ BEGIN
     BEGIN TRANSACTION;
     BEGIN TRY
       CREATE TABLE dbo.Ticket_X_Medio_De_Pago_Aplicado(
-      id_ticket INT PRIMARY KEY NOT NULL,
+      id_ticket INT NOT NULL,
       id_medio_de_pago_aplicado INT NOT NULL,
       id_tipo_comprobante INT NOT NULL,
       id_sucursal INT NOT NULL,
 
-      CONSTRAINT PK_Ticket_X_Medio_De_Pago_Aplicado PRIMARY KEY (id_medio_de_pago_aplicado, id_tipo_comprobante, id_sucursal)
+      CONSTRAINT PK_Ticket_X_Medio_De_Pago_Aplicado PRIMARY KEY (id_ticket, id_medio_de_pago_aplicado, id_tipo_comprobante, id_sucursal)
 
       CONSTRAINT FK_Ticket_X_Medio_De_Pago_Aplicado_id_medio_de_pago_aplicado FOREIGN KEY (id_medio_de_pago_aplicado) REFERENCES Medio_De_Pago_Aplicado(id_medio_de_pago_aplicado),
       CONSTRAINT FK_Ticket_X_Medio_De_Pago_Aplicado_id_ticket FOREIGN KEY (id_ticket) REFERENCES Ticket (id_ticket),
@@ -1038,9 +1037,9 @@ BEGIN
         s.id_sucural
       )
       --kk
-      FROM dbo.Maestra m2
-        JOIN dbo.Medio_De_Pago_Aplicado mpa
-        JOIN dbo.Ticket t
+      FROM dbo.Maestra m
+        JOIN dbo.Tipo_medio_de_pago mpa ON (m.PAGO_MEDIO_PAGO = mpa.tipo_medio_pago_nombre)
+        JOIN dbo.Ticket t ON (m.TICKET_NUMERO = t.ticket_numero)
         JOIN dbo.Tipo_Comprobante tc
         JOIN dbo.Sucursal s
       WHERE
@@ -1191,26 +1190,24 @@ BEGIN
     BEGIN TRANSACTION;
     BEGIN TRY      
       CREATE TABLE dbo.Ticket( 
-      id_ticket INT NOT NULL,
+      id_ticket INT PRIMARY KEY IDENTITY(1,1),
       id_tipo_comprobante INT NOT NULL,  
       id_sucursal INT NOT NULL,
 
+      ticket_numero INT NOT NULL;
       ticket_fecha_hora DATE NOT NULL,
-      ticket_subtotal INT,
-      ticket_total INT,
-      ticket_monto_total_promociones_aplicadas INT,
-      ticket_monto_total_descuentos_aplicados INT,
+      ticket_subtotal INT NOT NULL,
+      ticket_total INT NOT NULL,
+      ticket_monto_total_promociones_aplicadas INT NOT NULL,
+      ticket_monto_total_descuentos_aplicados INT NOT NULL,
 
-      CONSTRAINT PK_Ticket_id_ticket PRIMARY KEY AUTO_INCREMENT (id_ticket),
-      CONSTRAINT PK_Ticket_id_tipo_comprobante PRIMARY KEY (id_tipo_comprobante),
-      CONSTRAINT PK_Ticket_id_sucursal PRIMARY KEY (id_sucursal),
+      CONSTRAINT PK_Ticket_id_ticket PRIMARY KEY (id_ticket, id_tipo_comprobante, id_sucursal),
 
       CONSTRAINT FK_Ticket_id_tipo_comprobante FOREIGN KEY(id_tipo_comprobante) REFERENCES Tipo_Comprobante (id_tipo_comprobante),
       CONSTRAINT FK_Ticket_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES Sucursal (id_sucursal),
       CONSTRAINT FK_Ticket_id_caja FOREIGN KEY (id_caja) REFERENCES Caja (id_caja),
       CONSTRAINT FK_Ticket_empleado FOREIGN KEY (id_empleado) REFERENCES Empleado (id_empleado)
       )
-
       INSERT INTO dbo.Ticket (
         id_ticket,
         id_tipo,
