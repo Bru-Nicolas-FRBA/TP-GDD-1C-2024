@@ -1357,29 +1357,3 @@ BEGIN TRANSACTION;
     END CATCH
 END;
   ------------------------------------------------------------------------------------------------------------------------------------------------
-  /*
-  CREATE PROCEDURE dbo.migrar_
-  AS
-  BEGIN   
-      BEGIN TRANSACTION;
-      BEGIN TRY
-        --crear tabla
-
-        --rellenar tabla
-
-        PRINT 'Migración de _ terminada';
-      COMMIT TRANSACTION;
-      END TRY
-      BEGIN CATCH
-          ROLLBACK TRANSACTION;
-          DECLARE @ErrorMessage NVARCHAR(4000);
-          SET @ErrorMessage = ERROR_MESSAGE();
-          RAISERROR(@ErrorMessage, 16, 1);
-      END CATCH
-  END;
-  */
-
-
-
-
-
