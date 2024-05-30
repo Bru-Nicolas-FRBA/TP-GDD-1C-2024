@@ -501,7 +501,7 @@ BEGIN
       FROM dbo.Maestra m
         JOIN dbo.Sucursal s 
         ON (
-            s.id_sucursal 
+            s.numero_sucursal 
             = 
             (
                 SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1)
@@ -772,25 +772,29 @@ BEGIN
   BEGIN TRY
     --crear tabla
     CREATE TABLE dbo.Sucursal (
-      id_sucursal INT PRIMARY KEY NOT NULL,
+      id_sucursal INT PRIMARY KEY IDENTITY(1,1),
       id_domicilio INT NOT NULL,
       id_supermercado INT NOT NULL,
+      sucursal_numero INT NOT NULL,
       
       CONSTRAINT FK_Sucursal_Domicilio FOREIGN KEY (id_domicilio) REFERENCES Domicilio(id_domicilio),
       CONSTRAINT FK_Sucursal_Supermercado FOREIGN KEY (id_supermercado) REFERENCES Supermercado(super_id)
     );
     --rellenar tablas
     INSERT INTO dbo.Sucursal(
-      id_sucursal --esto creo que es el ID porque tiene numeracion pre establecida
       id_domicilio,
       id_supermercado,
+      sucursal_numero
     )
     SELECT(
-      (SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1) FROM dbo.Maestra m2) AS ID_SUCURSAL,
       d.id_domicilio,
-      s.super_id
+      s.super_id,
+      (SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1) FROM dbo.Maestra m2) AS Sucursal_Numero
     )
     FROM dbo.Maestra m 
+      --Este join con supermercado creo que se puede sacar, porque es un paso extra de comparacion
+      --Si en una direccion hay 2 sucursales (shopping con COTO y CARREFOUR por ejemplo) tendrian la misma direccion
+      --Como no se si son tan especificos lo dejo por las dudas, con la direccion sola sirve para mayoria de casos
       JOIN dbo.Supermercado s ON (
         m.SUPER_RAZON_SOC = s.super_razon_social
         AND m.SUPER_CUIT = s.super_cuit
@@ -812,7 +816,7 @@ BEGIN
         AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) = d.domicilio_calle
         AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) = d.domicilio_numero
       )
-    WHERE ID_SUCURSAL IS NOT NULL,
+    WHERE Sucursal_Numero IS NOT NULL,
       d.id_domicilio IS NOT NULL,
       s.super_id IS NOT NULL
     PRINT 'Migración de migrar_sucursal terminada';
@@ -1024,7 +1028,7 @@ BEGIN
       CONSTRAINT FK_Ticket_X_Medio_De_Pago_Aplicado_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES Sucursal (id_sucursal)
     );
 
-      INSERT INTO (
+      INSERT INTO dbo.Ticket_X_Medio_De_Pago_Aplicado(
         id_medio_de_pago_aplicado,
         id_ticket,
         id_tipo_comprobante,
@@ -1040,10 +1044,35 @@ BEGIN
       FROM dbo.Maestra m
         JOIN dbo.Tipo_medio_de_pago mpa ON (m.PAGO_MEDIO_PAGO = mpa.tipo_medio_pago_nombre)
         JOIN dbo.Ticket t ON (m.TICKET_NUMERO = t.ticket_numero)
-        JOIN dbo.Tipo_Comprobante tc
-        JOIN dbo.Sucursal s
-      WHERE
-      
+        JOIN dbo.Tipo_Comprobante tc ON (m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre)
+        --No tenemos el id de la sucursal asi que hay que buscar combinando
+        -- O sino las buscamos solo por numero, pero no creo que convenga porque si es distinto super se puede repetir
+        JOIN dbo.Supermercado super ON (
+          m.SUPER_RAZON_SOC = super.super_razon_social
+          AND m.SUPER_CUIT = super.super_cuit
+          AND m.SUPER_IIBB = super.super_cuit
+          AND m.SUPER_FECHA_INI_ACTIVIDAD = super.super_fecha_inicio_actividad
+          AND m.SUPER_CONDICION_FISCAL = super.super_condicion_fiscal
+        )
+        JOIN dbo.Provincia prov ON (
+          m.SUCURSAL_PROVINCIA = prov.provincia_nombre 
+          AND m.SUPER_PROVINCIA = prov.provincia_nombre
+        )       
+        JOIN dbo.Localidad loc ON (
+          m.SUCURSAL_LOCALIDAD = loc.localidad_nombre 
+          AND m.SUPER_LOCALIDAD = loc.localidad_nombre
+        )
+        JOIN dbo.Domicilio dom ON (
+          loc.id_localidad = dom.id_localidad
+          AND prov.id_provincia = dom.id_provincia
+          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) = dom.domicilio_calle
+          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) = dom.domicilio_numero
+        )
+
+      WHERE mpa.id_medio_de_pago_aplicado IS NOT NULL, 
+        AND t.id_ticket IS NOT NULL
+        AND tc.id_tipo_comprobante IS NOT NULL 
+        AND s.id_sucural IS NOT NULL
       PRINT 'Migración de migrar_ticket_x_medio_de_pago_aplicado terminada';
     COMMIT TRANSACTION;
     END TRY
@@ -1191,17 +1220,20 @@ BEGIN
     BEGIN TRY      
       CREATE TABLE dbo.Ticket( 
       id_ticket INT PRIMARY KEY IDENTITY(1,1),
+      
       id_tipo_comprobante INT NOT NULL,  
       id_sucursal INT NOT NULL,
+      id_caja INT NOT NULL,
+      id_empleado INT NOT NULL,
 
-      ticket_numero INT NOT NULL;
+      ticket_numero INT NOT NULL,
       ticket_fecha_hora DATE NOT NULL,
       ticket_subtotal INT NOT NULL,
       ticket_total INT NOT NULL,
       ticket_monto_total_promociones_aplicadas INT NOT NULL,
       ticket_monto_total_descuentos_aplicados INT NOT NULL,
 
-      CONSTRAINT PK_Ticket_id_ticket PRIMARY KEY (id_ticket, id_tipo_comprobante, id_sucursal),
+      CONSTRAINT PK_Ticket_id_ticket PRIMARY KEY (id_tipo_comprobante, id_sucursal, id_caja, id_empleado),
 
       CONSTRAINT FK_Ticket_id_tipo_comprobante FOREIGN KEY(id_tipo_comprobante) REFERENCES Tipo_Comprobante (id_tipo_comprobante),
       CONSTRAINT FK_Ticket_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES Sucursal (id_sucursal),
