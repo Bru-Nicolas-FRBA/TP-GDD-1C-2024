@@ -494,26 +494,42 @@ BEGIN
         m.EMPLEADO_TELEFONO,
         m.EMPLEADO_MAIL,
         m.EMPLEADO_FECHA_NACIMIENTO,
-        s.id_sucural
+        suc.id_sucural
         -- la id la generamos en la tabla Sucursal, hay que sacarla de ahi.
         -- Este es el chiste de las fk
       )
       FROM dbo.Maestra m
-        JOIN dbo.Sucursal s 
-        ON (
-            s.numero_sucursal 
-            = 
-            (
-                SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1)
-                FROM dbo.Maestra m2
-            )
-          ) 
-        WHERE m.EMPLEADO_NOMBRE IS NOT NULL
-          AND m.EMPLEADO_APELLIDO IS NOT NULL
-          AND m.EMPLEADO_DNI IS NOT NULL
-          AND m.EMPLEADO_FECHA_REGISTRO IS NOT NULL
-          AND m.EMPLEADO_TELEFONO IS NOT NULL
-          AND m.EMPLEADO_MAIL IS NOT NULL
+      --No tenemos el id de la sucursal asi que hay que buscar combinando
+      JOIN dbo.Sucursal suc ON (SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1) =  suc.sucursal_numero)
+      -- Primero nos fijamos que la direccion coincida
+      JOIN dbo.Provincia p ON (
+        m.SUCURSAL_PROVINCIA = p.provincia_nombre 
+        AND m.SUPER_PROVINCIA = p.provincia_nombre
+      )       
+      JOIN dbo.Localidad l ON (
+        m.SUCURSAL_LOCALIDAD = l.localidad_nombre 
+        AND m.SUPER_LOCALIDAD = l.localidad_nombre
+      )
+      JOIN dbo.Domicilio d ON (
+        l.id_localidad = d.id_localidad
+        AND p.id_provincia = d.id_provincia
+        AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) = d.domicilio_calle
+        AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) = d.domicilio_numero
+      )
+      --Por ultimo los datos para que no esten 2 super en la misma direccion (por ej un shopping)
+      JOIN dbo.Supermercado s ON (
+        m.SUPER_RAZON_SOC = s.super_razon_social
+        AND m.SUPER_CUIT = s.super_cuit
+        AND m.SUPER_IIBB = s.super_cuit
+        AND m.SUPER_FECHA_INI_ACTIVIDAD = s.super_fecha_inicio_actividad
+        AND m.SUPER_CONDICION_FISCAL = s.super_condicion_fiscal
+      ) 
+      WHERE m.EMPLEADO_NOMBRE IS NOT NULL
+        AND m.EMPLEADO_APELLIDO IS NOT NULL
+        AND m.EMPLEADO_DNI IS NOT NULL
+        AND m.EMPLEADO_FECHA_REGISTRO IS NOT NULL
+        AND m.EMPLEADO_TELEFONO IS NOT NULL
+        AND m.EMPLEADO_MAIL IS NOT NULL
     PRINT 'Migración de migrar_Empleado terminada';
     COMMIT TRANSACTION;
     END TRY
@@ -792,16 +808,9 @@ BEGIN
       (SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1) FROM dbo.Maestra m2) AS Sucursal_Numero
     )
     FROM dbo.Maestra m 
-      --Este join con supermercado creo que se puede sacar, porque es un paso extra de comparacion
-      --Si en una direccion hay 2 sucursales (shopping con COTO y CARREFOUR por ejemplo) tendrian la misma direccion
-      --Como no se si son tan especificos lo dejo por las dudas, con la direccion sola sirve para mayoria de casos
-      JOIN dbo.Supermercado s ON (
-        m.SUPER_RAZON_SOC = s.super_razon_social
-        AND m.SUPER_CUIT = s.super_cuit
-        AND m.SUPER_IIBB = s.super_cuit
-        AND m.SUPER_FECHA_INI_ACTIVIDAD = s.super_fecha_inicio_actividad
-        AND m.SUPER_CONDICION_FISCAL = s.super_condicion_fiscal
-      )
+      --No tenemos el id de la sucursal asi que hay que buscar combinando
+      JOIN dbo.Sucursal suc ON (SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1) =  suc.sucursal_numero)
+      -- Primero nos fijamos que la direccion coincida
       JOIN dbo.Provincia p ON (
         m.SUCURSAL_PROVINCIA = p.provincia_nombre 
         AND m.SUPER_PROVINCIA = p.provincia_nombre
@@ -815,6 +824,14 @@ BEGIN
         AND p.id_provincia = d.id_provincia
         AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) = d.domicilio_calle
         AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) = d.domicilio_numero
+      )
+      --Por ultimo los datos para que no esten 2 super en la misma direccion (por ej un shopping)
+      JOIN dbo.Supermercado s ON (
+        m.SUPER_RAZON_SOC = s.super_razon_social
+        AND m.SUPER_CUIT = s.super_cuit
+        AND m.SUPER_IIBB = s.super_cuit
+        AND m.SUPER_FECHA_INI_ACTIVIDAD = s.super_fecha_inicio_actividad
+        AND m.SUPER_CONDICION_FISCAL = s.super_condicion_fiscal
       )
     WHERE Sucursal_Numero IS NOT NULL,
       d.id_domicilio IS NOT NULL,
@@ -1038,7 +1055,7 @@ BEGIN
         mpa.id_medio_de_pago_aplicado, 
         t.id_ticket, 
         tc.id_tipo_comprobante, 
-        s.id_sucural
+        suc.id_sucural
       )
       --kk
       FROM dbo.Maestra m
@@ -1046,29 +1063,30 @@ BEGIN
         JOIN dbo.Ticket t ON (m.TICKET_NUMERO = t.ticket_numero)
         JOIN dbo.Tipo_Comprobante tc ON (m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre)
         --No tenemos el id de la sucursal asi que hay que buscar combinando
-        -- O sino las buscamos solo por numero, pero no creo que convenga porque si es distinto super se puede repetir
-        JOIN dbo.Supermercado super ON (
-          m.SUPER_RAZON_SOC = super.super_razon_social
-          AND m.SUPER_CUIT = super.super_cuit
-          AND m.SUPER_IIBB = super.super_cuit
-          AND m.SUPER_FECHA_INI_ACTIVIDAD = super.super_fecha_inicio_actividad
-          AND m.SUPER_CONDICION_FISCAL = super.super_condicion_fiscal
-        )
-        JOIN dbo.Provincia prov ON (
-          m.SUCURSAL_PROVINCIA = prov.provincia_nombre 
-          AND m.SUPER_PROVINCIA = prov.provincia_nombre
+        JOIN dbo.Sucursal suc ON (SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1) =  suc.sucursal_numero)
+        -- Primero nos fijamos que la direccion coincida
+        JOIN dbo.Provincia p ON (
+          m.SUCURSAL_PROVINCIA = p.provincia_nombre 
+          AND m.SUPER_PROVINCIA = p.provincia_nombre
         )       
-        JOIN dbo.Localidad loc ON (
-          m.SUCURSAL_LOCALIDAD = loc.localidad_nombre 
-          AND m.SUPER_LOCALIDAD = loc.localidad_nombre
+        JOIN dbo.Localidad l ON (
+          m.SUCURSAL_LOCALIDAD = l.localidad_nombre 
+          AND m.SUPER_LOCALIDAD = l.localidad_nombre
         )
-        JOIN dbo.Domicilio dom ON (
-          loc.id_localidad = dom.id_localidad
-          AND prov.id_provincia = dom.id_provincia
-          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) = dom.domicilio_calle
-          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) = dom.domicilio_numero
+        JOIN dbo.Domicilio d ON (
+          l.id_localidad = d.id_localidad
+          AND p.id_provincia = d.id_provincia
+          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) = d.domicilio_calle
+          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) = d.domicilio_numero
         )
-
+        --Por ultimo los datos para que no esten 2 super en la misma direccion (por ej un shopping)
+        JOIN dbo.Supermercado s ON (
+          m.SUPER_RAZON_SOC = s.super_razon_social
+          AND m.SUPER_CUIT = s.super_cuit
+          AND m.SUPER_IIBB = s.super_cuit
+          AND m.SUPER_FECHA_INI_ACTIVIDAD = s.super_fecha_inicio_actividad
+          AND m.SUPER_CONDICION_FISCAL = s.super_condicion_fiscal
+        )
       WHERE mpa.id_medio_de_pago_aplicado IS NOT NULL, 
         AND t.id_ticket IS NOT NULL
         AND tc.id_tipo_comprobante IS NOT NULL 
