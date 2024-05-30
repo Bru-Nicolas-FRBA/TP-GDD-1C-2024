@@ -1014,9 +1014,12 @@ BEGIN
         ticket_numero,
         ticket_fecha_hora,
         ticket_subtotal,
+        ticket_total_envio,
         ticket_total,
         ticket_monto_total_descuentos_aplicados,
-        ticket_monto_total_promociones_aplicadas,
+        ticket_monto_detalle_total
+        /*ticket_monto_total_promociones_aplicadas*/
+        --agregar procedimiento para calcularlo porque no esta por si solo. Aunque no se si es necesario
       )                        
       SELECT(
         tc.id_tipo_comprobante, --TICKET_TIPO_COMPROBANTE
@@ -1026,29 +1029,18 @@ BEGIN
         m.TICKET_NUMERO,
         m.TICKET_FECHA_HORA,
         m.TICKET_SUBTOTAL_PRODUCTOS,
-        m.TICKET_TOTAL_TICKET,
         m.TICKET_TOTAL_ENVIO,
-        --creo que esto es el total de descuento
-        (
-          m.TICKET_TOTAL_DESCUENTO_APLICADO +
-          m.TICKET_TOTAL_DESCUENTO_APLICADO_MP
-        ), --monto total desuento
-        --esto creo que son las promociones, ni idea porque no especifica
-        (
-          m. TICKET_DET_CANTIDAD + 
-          m.TICKET_DET_PRECIO +
-          m.TICKET_DET_TOTAL
-        )
+        m.TICKET_TOTAL_TICKET,
+        (m.TICKET_TOTAL_DESCUENTO_APLICADO + m.TICKET_TOTAL_DESCUENTO_APLICADO_MP), --creo que esto es el total de descuento
+        (m. TICKET_DET_CANTIDAD + m.TICKET_DET_PRECIO + m.TICKET_DET_TOTAL) --No se a que se refiere con detalle
       )
-      FROM dbo.Maestra 
-        JOIN dbo.TipoComprobante t ON (m.TICKET_TIPO_COMPROBANTE = t.TipoComprobante)
-        JOIN dbo.Sucursal s ON (m.SUCURSAL_NOMBRE = s.Sucursal)
-        JOIN dbo.Caja c ON (m.CAJA_NUMERO = c.Caja)
-        JOIN dbo.Empleado e ON (m.EMPLEADO_DNI = e.Empleado)
-      WHERE m.TICKET_TIPO_COMPROBANTE IS NOT NULL
-        AND m.SUCURSAL_NOMBRE IS NOT NULL
-        AND m.CAJA_NUMERO IS NOT NULL
-        AND m.EMPLEADO_DNI IS NOT NULL
+      FROM dbo.Maestra m 
+        JOIN dbo.Tipo_Comprobante tc
+        JOIN dbo.Caja caja
+        JOIN dbo.Empleado emp 
+        JOIN dbo.Sucursal suc
+      WHERE
+
       PRINT 'Migración de migrar_ticket terminada';
     COMMIT TRANSACTION;
     END TRY
