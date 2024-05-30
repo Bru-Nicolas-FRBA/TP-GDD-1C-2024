@@ -1035,7 +1035,7 @@
           m.TICKET_TOTAL_ENVIO,
           m.TICKET_TOTAL_TICKET,
           (m.TICKET_TOTAL_DESCUENTO_APLICADO + m.TICKET_TOTAL_DESCUENTO_APLICADO_MP), --creo que esto es el total de descuento
-          (m. TICKET_DET_CANTIDAD + m.TICKET_DET_PRECIO + m.TICKET_DET_TOTAL) --No se a que se refiere con detalle
+          --(m. TICKET_DET_CANTIDAD + m.TICKET_DET_PRECIO + m.TICKET_DET_TOTAL) -- Esto creo que es de item_ticket
         )
         FROM dbo.Maestra m 
           JOIN dbo.Tipo_Comprobante tc ON (m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre)
@@ -1301,25 +1301,52 @@ BEGIN TRANSACTION;
         item_ticket_precio
       )
     SELECT(
-      p.Producto,
-      t.Ticket,
-      t.Tipo_Comprobante,
-      s.Sucursal,
-      t.Item_ticket,
-      t.Item_ticket	
-
+      prod.id_producto,
+      tick.id_ticket,
+      tc.id_tipo_comprobante,
+      suc.id_sucursal,
+      m.TICKET_DET_CANTIDAD,
+      m.TICKET_DET_PRECIO	--kk
     )
-    FROM dbo.Maestra      JOIN dbo.Producto p ON (m.PRODUCTO_NOMBRE = p.Producto)
-      JOIN dbo.Ticket t ON (m.TICKET_NUMERO = t.Ticket)
-      JOIN dbo.Tipo_Comprobante t ON (m.TICKET_TIPO_COMPROBANTE = t.Tipo_Comprobante)
-      JOIN dbo.Sucursal s ON (m.SUCURSAL_NOMBRE = s.Sucursal)
-      JOIN dbo.Promocion p ON (m.PROMO_CODIGO = p.Promocion)
-    WHERE m.PRODUCTO_NOMBRE IS NOT NULL
-      AND m.TICKET_NUMERO IS NOT NULL
-      AND m.TICKET_TIPO_COMPROBANTE IS NOT NULL
-      AND m.SUCURSAL_NOMBRE IS NOT NULL
-      AND m.PROMO_CODIGO IS NOT NULL
-    PRINT 'MigraciÃ³n de migrar_item_ticket terminada';
+    FROM dbo.Maestra m
+      JOIN dbo.Producto p ON (m.PRODUCTO_NOMBRE = p.producto_nombre)
+        JOIN dbo.Producto_categoria pc ON (m.PRODUCTO_CATEGORIA = pc.producto_categoria_detalle)
+        JOIN dbo.Producto_subcategoria ps ON (m.PRODUCTO_SUB_CATEGORIA = ps.producto_subcategoria_detalle)
+        JOIN dbo.Producto_marca pm ON (m.PRODUCTO_MARCA = pm.producto_marca_detalle)
+      JOIN dbo.Ticket tick ON (m.TICKET_NUMERO = tick.ticket_numero)
+      JOIN dbo.Tipo_Comprobante tc ON (m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre)
+      JOIN dbo.Promocion p ON (m.PROMO_CODIGO = p.id_promocion)
+      JOIN dbo.Sucursal s ON ((SELECT SUBSTRING_INDEX(m2.SUCURSAL_NOMBRE, ':', -1) FROM dbo.Maestra m2) = s.sucursal_numero)
+      -- Primero nos fijamos que la direccion coincida
+        JOIN dbo.Provincia p ON (
+          m.SUCURSAL_PROVINCIA = p.provincia_nombre 
+          AND m.SUPER_PROVINCIA = p.provincia_nombre
+        )       
+        JOIN dbo.Localidad l ON (
+          m.SUCURSAL_LOCALIDAD = l.localidad_nombre 
+          AND m.SUPER_LOCALIDAD = l.localidad_nombre
+        )
+        JOIN dbo.Domicilio d ON (
+          l.id_localidad = d.id_localidad
+          AND p.id_provincia = d.id_provincia
+          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[0-9]', '') FROM dbo.Maestra) = d.domicilio_calle
+          AND (SELECT REGEXP_REPLACE(SUCURSAL_DIRECCION, '[^0-9]', '') FROM dbo.Maestra) = d.domicilio_numero
+        )
+        --Por ultimo los datos para que no esten 2 super en la misma direccion (por ej un shopping)
+        JOIN dbo.Supermercado s ON (
+          m.SUPER_RAZON_SOC = s.super_razon_social
+          AND m.SUPER_CUIT = s.super_cuit
+          AND m.SUPER_IIBB = s.super_cuit
+          AND m.SUPER_FECHA_INI_ACTIVIDAD = s.super_fecha_inicio_actividad
+          AND m.SUPER_CONDICION_FISCAL = s.super_condicion_fiscal
+        )
+    WHERE prod.id_producto IS NOT NULL
+      AND tick.id_ticket IS NOT NULL
+      AND tc.id_tipo_comprobante IS NOT NULL
+      AND suc.id_sucursal IS NOT NULL
+      AND m.TICKET_DET_CANTIDAD IS NOT NULL
+      AND m.TICKET_DET_PRECIO IS NOT NULL
+    PRINT 'Migracion de migrar_item_ticket terminada';
     COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
