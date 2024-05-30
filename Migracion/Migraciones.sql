@@ -494,7 +494,7 @@ BEGIN
         m.EMPLEADO_TELEFONO,
         m.EMPLEADO_MAIL,
         m.EMPLEADO_FECHA_NACIMIENTO,
-        suc.id_sucural
+        suc.id_sucursal
         -- la id la generamos en la tabla Sucursal, hay que sacarla de ahi.
         -- Este es el chiste de las fk
       )
@@ -978,6 +978,87 @@ BEGIN
         RAISERROR(@ErrorMessage, 16, 1);
     END CATCH
 END;
+------------------------------------------------------------------------------------------------------------------------------------------------  
+CREATE PROCEDURE dbo.migrar_ticket
+AS
+BEGIN   
+    BEGIN TRANSACTION;
+    BEGIN TRY      
+      CREATE TABLE dbo.Ticket( 
+        id_ticket INT PRIMARY KEY IDENTITY(1,1),
+        
+        id_tipo_comprobante DECIMAL NOT NULL,  
+        id_sucursal INT NOT NULL,
+        id_caja INT NOT NULL,
+        id_empleado INT NOT NULL,
+
+        ticket_numero INT NOT NULL,
+        ticket_fecha_hora DATE NOT NULL,
+        ticket_subtotal DECIMAL(10, 2) NOT NULL,
+        ticket_total DECIMAL(10, 2) NOT NULL,
+        ticket_monto_total_promociones_aplicadas INT NOT NULL,
+        ticket_monto_total_descuentos_aplicados INT NOT NULL,
+
+        CONSTRAINT PK_Ticket_id_ticket PRIMARY KEY (id_tipo_comprobante, id_sucursal, id_caja, id_empleado),
+
+        CONSTRAINT FK_Ticket_id_tipo_comprobante FOREIGN KEY(id_tipo_comprobante) REFERENCES Tipo_Comprobante (id_tipo_comprobante),
+        CONSTRAINT FK_Ticket_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES Sucursal (id_sucursal),
+        CONSTRAINT FK_Ticket_id_caja FOREIGN KEY (id_caja) REFERENCES Caja (id_caja),
+        CONSTRAINT FK_Ticket_empleado FOREIGN KEY (id_empleado) REFERENCES Empleado (id_empleado)
+      )
+      INSERT INTO dbo.Ticket (
+        id_tipo_comprobante,  
+        id_sucursal,
+        id_caja,
+        id_empleado,
+        ticket_numero,
+        ticket_fecha_hora,
+        ticket_subtotal,
+        ticket_total,
+        ticket_monto_total_descuentos_aplicados,
+        ticket_monto_total_promociones_aplicadas,
+      )                        
+      SELECT(
+        tc.id_tipo_comprobante, --TICKET_TIPO_COMPROBANTE
+        suc.id_sucursal,
+        caja.id_caja,
+        emp.id_empleado,
+        m.TICKET_NUMERO,
+        m.TICKET_FECHA_HORA,
+        m.TICKET_SUBTOTAL_PRODUCTOS,
+        m.TICKET_TOTAL_TICKET,
+        m.TICKET_TOTAL_ENVIO,
+        --creo que esto es el total de descuento
+        (
+          m.TICKET_TOTAL_DESCUENTO_APLICADO +
+          m.TICKET_TOTAL_DESCUENTO_APLICADO_MP
+        ), --monto total desuento
+        --esto creo que son las promociones, ni idea porque no especifica
+        (
+          m. TICKET_DET_CANTIDAD + 
+          m.TICKET_DET_PRECIO +
+          m.TICKET_DET_TOTAL
+        )
+      )
+      FROM dbo.Maestra 
+        JOIN dbo.TipoComprobante t ON (m.TICKET_TIPO_COMPROBANTE = t.TipoComprobante)
+        JOIN dbo.Sucursal s ON (m.SUCURSAL_NOMBRE = s.Sucursal)
+        JOIN dbo.Caja c ON (m.CAJA_NUMERO = c.Caja)
+        JOIN dbo.Empleado e ON (m.EMPLEADO_DNI = e.Empleado)
+      WHERE m.TICKET_TIPO_COMPROBANTE IS NOT NULL
+        AND m.SUCURSAL_NOMBRE IS NOT NULL
+        AND m.CAJA_NUMERO IS NOT NULL
+        AND m.EMPLEADO_DNI IS NOT NULL
+      PRINT 'Migración de migrar_ticket terminada';
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
 ------------------------------------------------------------------------------------------------------------------------------------------------
 CREATE PROCEDURE dbo.migrar_promoxion_x_item_ticket
 AS
@@ -1009,7 +1090,7 @@ BEGIN
     )
     FROM dbo.Maestra m
       JOIN dbo.Promocion p ON (m.PROMO_CODIGO = p.id_promocion)
-      JOIN dbo.Ticket t ON (m.TICKET_NUMERO = t.id_ticket) 
+      JOIN dbo.Ticket t ON (m.TICKET_NUMERO = t.ticket_numero)--kk 
     WHERE p.id_promocionIS NOT NULL,
       AND id_prod IS NOT NULL,
       AND t.id_ticket IS NOT NULL
@@ -1055,9 +1136,8 @@ BEGIN
         mpa.id_medio_de_pago_aplicado, 
         t.id_ticket, 
         tc.id_tipo_comprobante, 
-        suc.id_sucural
+        suc.id_sucursal
       )
-      --kk
       FROM dbo.Maestra m
         JOIN dbo.Tipo_medio_de_pago mpa ON (m.PAGO_MEDIO_PAGO = mpa.tipo_medio_pago_nombre)
         JOIN dbo.Ticket t ON (m.TICKET_NUMERO = t.ticket_numero)
@@ -1090,7 +1170,7 @@ BEGIN
       WHERE mpa.id_medio_de_pago_aplicado IS NOT NULL, 
         AND t.id_ticket IS NOT NULL
         AND tc.id_tipo_comprobante IS NOT NULL 
-        AND s.id_sucural IS NOT NULL
+        AND s.id_sucursal IS NOT NULL
       PRINT 'Migración de migrar_ticket_x_medio_de_pago_aplicado terminada';
     COMMIT TRANSACTION;
     END TRY
@@ -1103,42 +1183,39 @@ BEGIN
 END;
     
 ------------------------------------------------------------------------------------------------------------------------------------------------
-
 CREATE PROCEDURE dbo.migrar_medio_de_pago_aplicado
 AS
 BEGIN   
     BEGIN TRANSACTION;
     BEGIN TRY
       CREATE TABLE Medio_de_pago_aplicado (
-      id_medio_pago_aplicado  INT PRIMARY KEY IDENTITY(1,1),
-      id_medio_pago INT NOT NULL,
-      id_cuota INT NOT NULL,
-      id_cliente INT NOT NULL,
-      id_descuento INT NOT NULL,
-      medio_de_pago_fecha_vencimiento DATE NOT NULL,
-      medio_de_pago_monto_base DECIMAL(10, 2) NOT NULL,
-      medio_de_pago_monto_de_descuento_a_aplicar DECIMAL(10, 2),
-      medio_de_pago_monto_base_descontado DECIMAL(10, 2),
-      medio_de_pago_cuotas INT,
+        id_medio_pago_aplicado  INT PRIMARY KEY IDENTITY(1,1),
+        id_medio_pago INT NOT NULL,
+        id_cuota INT NOT NULL,
+        id_cliente INT NOT NULL,
+        id_descuento INT NOT NULL,
+        medio_de_pago_fecha_vencimiento DATE NOT NULL,
+        medio_de_pago_monto_base DECIMAL(10, 2) NOT NULL,
+        medio_de_pago_monto_de_descuento_a_aplicar DECIMAL(10, 2),
+        medio_de_pago_monto_base_descontado DECIMAL(10, 2),
+        medio_de_pago_cuotas INT,
 
-      CONSTRAINT FK_Medio_de_pago_aplicado_Medio_de_pago FOREIGN KEY (id_medio_pago) REFERENCES Medio_de_pago(id_medio_pago),
-      CONSTRAINT FK_Medio_de_pago_aplicado_Cuota FOREIGN KEY (id_cuota) REFERENCES Cuota(id_cuota),
-      CONSTRAINT FK_Medio_de_pago_aplicado_Cliente FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
-      CONSTRAINT FK_Medio_de_pago_aplicado_Descuento FOREIGN KEY (id_descuento) REFERENCES Descuento(id_descuento)
-    );
+        CONSTRAINT FK_Medio_de_pago_aplicado_Medio_de_pago FOREIGN KEY (id_medio_pago) REFERENCES Medio_de_pago(id_medio_pago),
+        CONSTRAINT FK_Medio_de_pago_aplicado_Cuota FOREIGN KEY (id_cuota) REFERENCES Cuota(id_cuota),
+        CONSTRAINT FK_Medio_de_pago_aplicado_Cliente FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
+        CONSTRAINT FK_Medio_de_pago_aplicado_Descuento FOREIGN KEY (id_descuento) REFERENCES Descuento(id_descuento)
+      );
 
     INSERT INTO (
       id_medio_pago,
       id_cuota,
       id_cliente,
       id_descuento,
-      medio_pago_fecha,
-      medio_pago_fecha_vencimiento,
-      medio_de_pago_nro_tarjeta,
+      medio_de_pago_fecha_vencimiento,
       medio_de_pago_monto_base,
       medio_de_pago_monto_de_descuento_a_aplicar,
       medio_de_pago_monto_base_descontado,
-      medio_de_pago_cuotas
+      medio_de_pago_cuotas,
     )
     SELECT DISTINCT (
       mp.id_medio_pago, --PAGO_MEDIO_PAGO //PAGO_TIPO_MEDIO_PAGO
@@ -1178,22 +1255,21 @@ BEGIN
 BEGIN TRANSACTION;
     BEGIN TRY
     CREATE TABLE dbo.Item_Ticket(
-          id_producto INT NOT NULL,
-          id_ticket INT NOT NULL,
-          id_tipo_comprobante INT NOT NULL,
-          id_sucursaL INT NOT NULL,
-          item_ticket_cantidad INT NOT NULL,
-          item_ticket_precio INT NOT NULL,
+      id_producto INT NOT NULL,
+      id_ticket INT NOT NULL,
+      id_tipo_comprobante INT NOT NULL,
+      id_sucursaL INT NOT NULL,
+      item_ticket_cantidad INT NOT NULL,
+      item_ticket_precio INT NOT NULL,
 
-          CONSTRAINT PK_Item_Ticket PRIMARY KEY (id_producto, id_ticket, id_tipo_comprobante, id_sucursal),
+      CONSTRAINT PK_Item_Ticket PRIMARY KEY (id_producto, id_ticket, id_tipo_comprobante, id_sucursal),
 
-          CONSTRAINT FK_Item_Ticket_id_producto FOREIGN KEY (id_producto) REFERENCES dbo.Producto (id_producto),
-          CONSTRAINT FK_Item_Ticket_id_ticket FOREIGN KEY (id_ticket) REFERENCES dbo.Ticket (id_ticket),
-          CONSTRAINT FK_Item_Ticket_id_tipo_comprobante FOREIGN KEY (id_tipo_comprobante) REFERENCES dbo.Ticket (id_tipo_comprobante),
-          CONSTRAINT FK_Item_Ticket_id_sucursal FOREIGN KEY (id_sucursal)  REFERENCES dbo.Sucursal (id_sucursal),
-          CONSTRAINT FK_Item_Ticket_id_promocion FOREIGN KEY (id_promocion) REFERENCES dbo.Promocion (id_promocion)
-        )
-
+      CONSTRAINT FK_Item_Ticket_id_producto FOREIGN KEY (id_producto) REFERENCES dbo.Producto (id_producto),
+      CONSTRAINT FK_Item_Ticket_id_ticket FOREIGN KEY (id_ticket) REFERENCES dbo.Ticket (id_ticket),
+      CONSTRAINT FK_Item_Ticket_id_tipo_comprobante FOREIGN KEY (id_tipo_comprobante) REFERENCES dbo.Ticket (id_tipo_comprobante),
+      CONSTRAINT FK_Item_Ticket_id_sucursal FOREIGN KEY (id_sucursal)  REFERENCES dbo.Sucursal (id_sucursal),
+      CONSTRAINT FK_Item_Ticket_id_promocion FOREIGN KEY (id_promocion) REFERENCES dbo.Promocion (id_promocion)
+    )
     INSERT INTO dbo.Item_Ticket(
         id_producto, 
         id_ticket,
@@ -1221,69 +1297,6 @@ BEGIN TRANSACTION;
       AND m.SUCURSAL_NOMBRE IS NOT NULL
       AND m.PROMO_CODIGO IS NOT NULL
     PRINT 'Migración de migrar_item_ticket terminada';
-    COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        DECLARE @ErrorMessage NVARCHAR(4000);
-        SET @ErrorMessage = ERROR_MESSAGE();
-        RAISERROR(@ErrorMessage, 16, 1);
-    END CATCH
-END;
-------------------------------------------------------------------------------------------------------------------------------------------------  
-CREATE PROCEDURE dbo.migrar_ticket
-AS
-BEGIN   
-    BEGIN TRANSACTION;
-    BEGIN TRY      
-      CREATE TABLE dbo.Ticket( 
-      id_ticket INT PRIMARY KEY IDENTITY(1,1),
-      
-      id_tipo_comprobante INT NOT NULL,  
-      id_sucursal INT NOT NULL,
-      id_caja INT NOT NULL,
-      id_empleado INT NOT NULL,
-
-      ticket_numero INT NOT NULL,
-      ticket_fecha_hora DATE NOT NULL,
-      ticket_subtotal INT NOT NULL,
-      ticket_total INT NOT NULL,
-      ticket_monto_total_promociones_aplicadas INT NOT NULL,
-      ticket_monto_total_descuentos_aplicados INT NOT NULL,
-
-      CONSTRAINT PK_Ticket_id_ticket PRIMARY KEY (id_tipo_comprobante, id_sucursal, id_caja, id_empleado),
-
-      CONSTRAINT FK_Ticket_id_tipo_comprobante FOREIGN KEY(id_tipo_comprobante) REFERENCES Tipo_Comprobante (id_tipo_comprobante),
-      CONSTRAINT FK_Ticket_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES Sucursal (id_sucursal),
-      CONSTRAINT FK_Ticket_id_caja FOREIGN KEY (id_caja) REFERENCES Caja (id_caja),
-      CONSTRAINT FK_Ticket_empleado FOREIGN KEY (id_empleado) REFERENCES Empleado (id_empleado)
-      )
-      INSERT INTO dbo.Ticket (
-        id_ticket,
-        id_tipo,
-        id_sucursal,
-        ticket_fecha_hora,
-        ticket_subtotal,
-        ticket_total,
-        ticket_monto_total_promociones_aplicadas,
-        ticket_monto_descuentos_aplicados
-      )                        
-      SELECT(
-        t.TipoComprobante, 
-        s.Sucursal, 
-        c.Caja, 
-        e.Empleado
-      )
-      FROM dbo.Maestra
-        JOIN dbo.TipoComprobante ON (m.TICKET_TIPO_COMPROBANTE = t.TipoComprobante)
-        JOIN dbo.Sucursal ON (m.SUCURSAL_NOMBRE = s.Sucursal)
-        JOIN dbo.Caja ON (m.CAJA_NUMERO = c.Caja)
-        JOIN dbo.Empleado ON (m.EMPLEADO_DNI = e.Empleado)
-      WHERE m.TICKET_TIPO_COMPROBANTE IS NOT NULL
-        AND m.SUCURSAL_NOMBRE IS NOT NULL
-        AND m.CAJA_NUMERO IS NOT NULL
-        AND m.EMPLEADO_DNI IS NOT NULL
-      PRINT 'Migración de migrar_ticket terminada';
     COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
