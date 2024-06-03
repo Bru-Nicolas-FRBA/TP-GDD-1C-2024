@@ -1,4 +1,9 @@
 /*------------------------------------PROCEDIMIENTOS PARA MIGRAR TABLAS------------------------------------*/
+--primero veamos de crear tablas
+--despues procedimientos para migrar foraneas
+--procedimimiento para ejecutar los procedeure
+--codigo muerto para hacer todos los drop table (PROBAR CODIGO)
+
 /*------------------------------------TABLAS SIN CLAVE FORANEA------------------------------------*/
 CREATE PROCEDURE gd_esquema.migrar_producto_categoria
 AS
