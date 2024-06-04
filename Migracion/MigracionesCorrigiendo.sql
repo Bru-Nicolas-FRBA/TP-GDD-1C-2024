@@ -1,37 +1,23 @@
 USE [GD1C2024]
 GO
 
-/****** Object:  Schema [FRBA_SUPERMERCADO]    Script Date: 14/10/2022 21:31:23 ******/
 CREATE SCHEMA [FRBA_SUPERMERCADO]
 GO
 
------ CREACIÓN DE TABLAS  -----
---
-CREATE TABLE FRBA_SUPERMERCADO.Producto_categoria (
-	id_producto_categoria INT PRIMARY KEY IDENTITY(1,1),
-	producto_categoria_detalle VARCHAR(100) UNIQUE NOT NULL,
-);
---
-CREATE TABLE FRBA_SUPERMERCADO.Producto_subcategoria (
-    id_producto_subcategoria INT PRIMARY KEY IDENTITY(1,1),
-    producto_subcategoria_detalle VARCHAR(100) UNIQUE NOT NULL, 
-);
---
-CREATE TABLE FRBA_SUPERMERCADO.Producto_marca (
-	id_producto_marca INT PRIMARY KEY IDENTITY(1,1),
-	producto_marca_detalle VARCHAR(100) UNIQUE NOT NULL,
-);
---
-CREATE TABLE FRBA_SUPERMERCADO.Cliente_Contacto (
-	id_cliente_contacto INT PRIMARY KEY IDENTITY(1,1),
-	cliente_contacto_numero VARCHAR(20) UNIQUE NOT NULL,
-);
---
+----- CREACIÓN DE TABLAS (respetar orden establecido) -----
+---
+CREATE TABLE FRBA_SUPERMERCADO.Producto_categoria (id_producto_categoria INT PRIMARY KEY);
+---
+CREATE TABLE FRBA_SUPERMERCADO.Producto_subcategoria (id_producto_subcategoria INT PRIMARY KEY);
+---
+CREATE TABLE FRBA_SUPERMERCADO.Producto_marca (id_producto_marca INT PRIMARY KEY);
+---
 CREATE TABLE FRBA_SUPERMERCADO.Tipo_medio_de_pago (
 	id_tipo_medio_pago INT PRIMARY KEY IDENTITY(1,1),
-	medio_de_pago_detalle VARCHAR(100) UNIQUE NOT NULL,
+	medio_de_pago_clasificacion VARCHAR(100) UNIQUE NOT NULL, -- credito / debito / efectivo / etc
+	medio_de_pago_detalle VARCHAR(100) UNIQUE NOT NULL, -- visa / mastercard / efectivo / etc
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Descuento (
 	descuento_codigo INT PRIMARY KEY NOT NULL,
 	descuento_descripcion VARCHAR(100) NOT NULL,
@@ -40,8 +26,8 @@ CREATE TABLE FRBA_SUPERMERCADO.Descuento (
 	descuento_valor_porcentual_a_aplicar DECIMAL(5, 2) NOT NULL,
 	descuento_tope DECIMAL(10, 2) NOT NULL,
 );
---
-CREATE TABLE FRBA_SUPERMERCADO.Regla (
+---
+CREATE TABLE FRBA_SUPERMERCADO.Regla(
 	id_regla INT PRIMARY KEY IDENTITY(1,1),
 	regla_cantidad_aplicable INT NOT NULL,
 	regla_descripcion VARCHAR(50) UNIQUE NOT NULL,
@@ -51,7 +37,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Regla (
 	regla_mismo_producto BIT NOT NULL,
 	regla_descuento_aplicable_prod DECIMAL(3, 2) NOT NULL,
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Supermercado (
 	super_id INT PRIMARY KEY IDENTITY(1,1),
 	super_nombre VARCHAR(50) UNIQUE NOT NULL,
@@ -61,13 +47,13 @@ CREATE TABLE FRBA_SUPERMERCADO.Supermercado (
 	super_fecha_inicio_actividad DATE NOT NULL,
 	super_condicion_fiscal VARCHAR(50) NOT NULL
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Tipo_Caja(
 	id_tipo_caja INT PRIMARY KEY IDENTITY(1,1),
 	tipo_caja_descripcion VARCHAR(50) UNIQUE NOT NULL,
 );
---
- CREATE TABLE FRBA_SUPERMERCADO.Tipo_Comprobante(
+---
+CREATE TABLE FRBA_SUPERMERCADO.Tipo_Comprobante(
 	id_tipo_comprobante INT PRIMARY KEY IDENTITY(1,1),
 	tipo_comprobante_nombre VARCHAR (1), --caracter
 );
@@ -76,7 +62,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Provincia(
 	id_provincia INT PRIMARY KEY IDENTITY(1,1),
 	provincia_nombre VARCHAR(50) UNIQUE NOT NULL,
 );
---
+--kk
 CREATE TABLE FRBA_SUPERMERCADO.Localidad(
 	id_localidad INT PRIMARY KEY IDENTITY(1,1),
 	localidad_nombre VARCHAR(50) UNIQUE NOT NULL,
@@ -113,7 +99,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Cliente(
 	id_cliente INT PRIMARY KEY IDENTITY(1,1),
 	cliente_dni INT NOT NULL,
 	cliente_id_domicilio INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Domicilio(id_domicilio) NOT NULL,
-	cliente_id_contacto INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Cliente_Contacto(id_cliente_contacto) NOT NULL,		
+	--cliente_id_contacto INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Cliente_Contacto(id_cliente_contacto) NOT NULL,		
 	cliente_nombre VARCHAR(100) NOT NULL,
 	cliente_apellido VARCHAR(100) NOT NULL,
 	cliente_fecha_registro DATE NOT NULL,
@@ -223,11 +209,218 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion_X_Producto (
 	CONSTRAINT FK_Promoxion_X_Producto_id_producto FOREIGN KEY (id_producto) REFERENCES FRBA_SUPERMERCADO.Producto(id_producto)
 );
 --
-
+GO
 ----- FUNCIONES PARA USAR -----
 
 ----- PROCEDIMIENTOS DE MIGRACION -----
-
+/*
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_
+AS
+BEGIN
+	INSERT INTO
+	SELECT
+	FROM
+	WHERE
+	PRINT 'Migración de terminada';
+END
+GO
+*/
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_categoria
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Producto_categoria(id_producto_categoria)
+		SELECT DISTINCT CAST(SUBSTRING(m.PRODUCTO_CATEGORIA, 13,20) AS INT)
+		FROM gd_esquema.Maestra m
+		WHERE SUBSTRING(m.PRODUCTO_CATEGORIA, 13,20) IS NOT NULL	
+	PRINT 'Migración de categoria terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_subcategoria
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Producto_subcategoria(id_producto_subcategoria)
+		SELECT DISTINCT CAST(SUBSTRING(m.PRODUCTO_SUB_CATEGORIA, 13,20) AS INT)
+		FROM gd_esquema.Maestra m
+		WHERE SUBSTRING(m.PRODUCTO_SUB_CATEGORIA, 13,7) IS NOT NULL		
+	PRINT 'Migración de subcategoria terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_marca
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Producto_marca(id_producto_marca)
+		SELECT DISTINCT CAST(SUBSTRING(m.PRODUCTO_MARCA, 9,10) AS DECIMAL(10,0))
+		FROM gd_esquema.Maestra m
+		WHERE m.PRODUCTO_MARCA IS NOT NULL
+	PRINT 'Migración de marca terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_tipo_medio_pago
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Tipo_medio_de_pago(medio_de_pago_clasificacion, medio_de_pago_detalle)
+	SELECT DISTINCT m.PAGO_TIPO_MEDIO_PAGO, m.PAGO_MEDIO_PAGO
+	FROM gd_esquema.Maestra m
+	WHERE m.PAGO_TIPO_MEDIO_PAGO IS NOT NULL
+		AND m.PAGO_MEDIO_PAGO IS NOT NULL
+	PRINT 'Migración de medio de pago terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_descuento
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Descuento(
+	 descuento_codigo,
+	 descuento_descripcion,
+	 descuento_fecha_inicio,
+	 descuento_fecha_fin,
+	 descuento_valor_porcentual_a_aplicar,
+	 descuento_tope
+	 )
+	SELECT DISTINCT m.DESCUENTO_CODIGO,
+		m.DESCUENTO_DESCRIPCION,
+		m.DESCUENTO_FECHA_INICIO,
+		m.DESCUENTO_FECHA_FIN,
+		m.DESCUENTO_PORCENTAJE_DESC,
+		m.DESCUENTO_TOPE
+	FROM gd_esquema.Maestra m
+	WHERE m.DESCUENTO_CODIGO IS NOT NULL
+	PRINT 'Migración de descuento terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_regla
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Regla(
+		regla_descripcion,
+		regla_cantidad_aplicable,
+		regla_cantidad_aplicable_descuento,
+		regla_cantidad_maxima,
+		regla_misma_marca,
+		regla_mismo_producto,
+		regla_descuento_aplicable_prod
+	)
+	SELECT DISTINCT       
+		m.REGLA_DESCRIPCION,
+		m.REGLA_CANT_APLICABLE_REGLA,
+        m.REGLA_CANT_APLICA_DESCUENTO,
+        m.REGLA_CANT_MAX_PROD,
+        m.REGLA_APLICA_MISMA_MARCA,
+        m.REGLA_APLICA_MISMO_PROD,
+        m.REGLA_DESCUENTO_APLICABLE_PROD
+	FROM gd_esquema.Maestra m
+	WHERE m.REGLA_DESCRIPCION IS NOT NULL
+	PRINT 'Migración de terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_supermercado
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Supermercado(
+		super_nombre,
+		super_razon_social,
+		super_cuit,
+		super_iibb, --Ingr. Brut. N°: 133452135
+		super_fecha_inicio_actividad,
+		super_condicion_fiscal
+	)
+	SELECT DISTINCT m.SUPER_NOMBRE,
+		m.SUPER_RAZON_SOC,
+		m.SUPER_CUIT,
+		m.SUPER_IIBB,
+		m.SUPER_FECHA_INI_ACTIVIDAD,
+		m.SUPER_CONDICION_FISCAL
+	FROM gd_esquema.Maestra m
+	WHERE m.SUPER_IIBB IS NOT NULL
+	PRINT 'Migración de supermercado terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_supermercado
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Supermercado(
+		super_nombre,
+		super_razon_social,
+		super_cuit,
+		super_iibb, 
+		super_fecha_inicio_actividad,
+		super_condicion_fiscal
+	)
+	SELECT DISTINCT m.SUPER_NOMBRE,
+		m.SUPER_RAZON_SOC,
+		m.SUPER_CUIT,
+		(CAST(SUBSTRING(m.SUPER_IIBB, 16,10) AS DECIMAL(9,0))),
+		m.SUPER_FECHA_INI_ACTIVIDAD,
+		m.SUPER_CONDICION_FISCAL
+	FROM gd_esquema.Maestra m
+	WHERE m.SUPER_IIBB IS NOT NULL
+	PRINT 'Migración de supermercado terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_tipo_caja
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Tipo_Caja(tipo_caja_descripcion)
+        SELECT DISTINCT(SUBSTRING(CAJA_TIPO,11,20))
+        FROM gd_esquema.Maestra
+        WHERE CAJA_TIPO IS NOT NULL
+	PRINT 'Migración de tipo de caja terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_tipo_comprobante
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Tipo_Comprobante(tipo_comprobante_nombre)
+        SELECT DISTINCT TICKET_TIPO_COMPROBANTE
+        FROM gd_esquema.Maestra
+        WHERE TICKET_TIPO_COMPROBANTE IS NOT NULL
+	PRINT 'Migración de tipo de comprobante terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Provincia
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Provincia(provincia_nombre)
+	SELECT CLIENTE_PROVINCIA AS provincia
+		FROM gd_esquema.Maestra 
+		WHERE CLIENTE_PROVINCIA IS NOT NULL
+		UNION SELECT SUCURSAL_PROVINCIA AS provincia
+			FROM gd_esquema.Maestra
+			WHERE SUCURSAL_PROVINCIA IS NOT NULL
+		UNION SELECT SUPER_PROVINCIA AS provincia
+			FROM gd_esquema.Maestra
+			WHERE SUPER_PROVINCIA IS NOT NULL;
+	PRINT 'Migración de Provincia terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_localidad
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Localidad(localidad_nombre)
+	SELECT CLIENTE_LOCALIDAD AS LOCALIDAD
+			FROM gd_esquema.Maestra 
+			WHERE CLIENTE_LOCALIDAD IS NOT NULL
+		UNION SELECT SUCURSAL_LOCALIDAD
+			FROM gd_esquema.Maestra
+			WHERE SUCURSAL_LOCALIDAD IS NOT NULL
+		UNION SELECT SUPER_LOCALIDAD
+			FROM gd_esquema.Maestra
+			WHERE SUPER_LOCALIDAD IS NOT NULL;
+	PRINT 'Migración de Localidad terminada';
+END
+GO
 ----- EJECUCION DE LOS PROCEDURES -----
 
 ----- COSAS PARA PROBAR -----
