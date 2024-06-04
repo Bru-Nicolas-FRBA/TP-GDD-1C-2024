@@ -57,22 +57,24 @@ CREATE TABLE FRBA_SUPERMERCADO.Tipo_Comprobante(
 	id_tipo_comprobante INT PRIMARY KEY IDENTITY(1,1),
 	tipo_comprobante_nombre VARCHAR (1), --caracter
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Provincia(
 	id_provincia INT PRIMARY KEY IDENTITY(1,1),
 	provincia_nombre VARCHAR(50) UNIQUE NOT NULL,
 );
---kk
+---
 CREATE TABLE FRBA_SUPERMERCADO.Localidad(
 	id_localidad INT PRIMARY KEY IDENTITY(1,1),
 	localidad_nombre VARCHAR(50) UNIQUE NOT NULL,
 );
 --
 CREATE TABLE FRBA_SUPERMERCADO.Promocion (
-	id_promocion INT PRIMARY KEY,
+	id_promo INT PRIMARY KEY IDENTITY(1,1),
+	promo_codigo INT NOT NULL, -- codigo de uso (se repite)
 	promo_descripcion VARCHAR(50) UNIQUE NOT NULL,
 	promo_fecha_inicio DATE NOT NULL,
 	promo_fecha_fin DATE NOT NULL,
+	promo_valor_descuento DECIMAL(6,2) NOT NULL, 
 );
 ----- Tablas con Clave foranea
 CREATE TABLE FRBA_SUPERMERCADO.Caja(
@@ -421,6 +423,29 @@ BEGIN
 	PRINT 'Migración de Localidad terminada';
 END
 GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_promocion
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Promocion(
+		promo_codigo, -- codigo de uso (se repite)
+		promo_descripcion,
+		promo_fecha_inicio,
+		promo_fecha_fin,
+		promo_valor_descuento
+      )
+      SELECT
+        PROMO_CODIGO,
+        PROMOCION_DESCRIPCION,
+        PROMOCION_FECHA_INICIO,
+        PROMOCION_FECHA_FIN,
+        PROMO_APLICADA_DESCUENTO
+      FROM gd_esquema.Maestra
+        WHERE PROMO_CODIGO IS NOT NULL
+	PRINT 'Migración de promocion terminada';
+END
+GO
+
 ----- EJECUCION DE LOS PROCEDURES -----
 
 ----- COSAS PARA PROBAR -----
