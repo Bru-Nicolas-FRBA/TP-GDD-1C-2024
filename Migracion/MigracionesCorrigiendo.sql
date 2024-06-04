@@ -67,8 +67,8 @@ CREATE TABLE FRBA_SUPERMERCADO.Localidad(
 	id_localidad INT PRIMARY KEY IDENTITY(1,1),
 	localidad_nombre VARCHAR(50) UNIQUE NOT NULL,
 );
---
-CREATE TABLE FRBA_SUPERMERCADO.Promocion (
+---
+CREATE TABLE FRBA_SUPERMERCADO.Promocion(
 	id_promo INT PRIMARY KEY IDENTITY(1,1),
 	promo_codigo INT NOT NULL, -- codigo de uso (se repite)
 	promo_descripcion VARCHAR(50) UNIQUE NOT NULL,
@@ -77,12 +77,13 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion (
 	promo_valor_descuento DECIMAL(6,2) NOT NULL, 
 );
 ----- Tablas con Clave foranea
+---
 CREATE TABLE FRBA_SUPERMERCADO.Caja(
 	id_caja INT PRIMARY KEY IDENTITY(1,1),
 	caja_numero INT, 	
 	id_tipo_caja INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Tipo_Caja (id_tipo_caja)
 );
---
+---kk
 CREATE TABLE FRBA_SUPERMERCADO.Domicilio (
 	id_domicilio INT PRIMARY KEY IDENTITY(1,1),
 	id_localidad INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Localidad(id_localidad) NOT NULL,
@@ -161,7 +162,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Item_Ticket(
 	id_producto INT FOREIGN KEY (id_producto) REFERENCES FRBA_SUPERMERCADO.Producto (id_producto) NOT NULL,
 	id_tipo_comprobante INT FOREIGN KEY (id_tipo_comprobante) REFERENCES FRBA_SUPERMERCADO.Tipo_Comprobante (id_tipo_comprobante) NOT NULL,
 	id_sucursaL INT FOREIGN KEY (id_sucursal)  REFERENCES FRBA_SUPERMERCADO.Sucursal (id_sucursal) NOT NULL,
-	id_promocion INT FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion (id_promocion) NOT NULL,
+	id_promocion INT FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion (id_promo) NOT NULL,
 	item_ticket_cantidad INT NOT NULL,
 	item_ticket_precio INT NOT NULL,
 );
@@ -183,7 +184,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Regla_x_Promocion (
 	id_promocion INT,
 	id_regla INT,
 	CONSTRAINT PK_Regla_X_Promocion PRIMARY KEY (id_promocion, id_regla),
-	CONSTRAINT FK_Regla_X_Promocion_Promocion FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion(id_promocion),
+	CONSTRAINT FK_Regla_X_Promocion_Promocion FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion(id_promo),
 	CONSTRAINT FK_Regla_X_Promocion_Regla FOREIGN KEY (id_regla) REFERENCES FRBA_SUPERMERCADO.Regla(id_regla)
 );
 --
@@ -199,7 +200,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion_X_Item_Ticket (--
 	id_promocion INT,
 	id_item_ticket INT,
 	CONSTRAINT PK_Promocion_X_ItemTicket PRIMARY KEY (id_promocion, id_item_ticket),
-	CONSTRAINT FK_Promocion_X_ItemTicket_Promocion FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion(id_promocion),
+	CONSTRAINT FK_Promocion_X_ItemTicket_Promocion FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion(id_promo),
 	CONSTRAINT FK_Promocion_X_ItemTicket_Item_Ticket FOREIGN KEY (id_item_ticket) REFERENCES FRBA_SUPERMERCADO.Item_Ticket(id_item_ticket)
 );
 --
@@ -207,13 +208,40 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion_X_Producto (
 	id_promocion INT,
 	id_producto INT,
 	CONSTRAINT PK_Promocion_X_ItemTicket PRIMARY KEY (id_promocion, id_producto),
-	CONSTRAINT FK_Promoxion_X_Producto_id_promocion FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion(id_promocion),
+	CONSTRAINT FK_Promoxion_X_Producto_id_promocion FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion(id_promo),
 	CONSTRAINT FK_Promoxion_X_Producto_id_producto FOREIGN KEY (id_producto) REFERENCES FRBA_SUPERMERCADO.Producto(id_producto)
 );
 --
 GO
 ----- FUNCIONES PARA USAR -----
+--
+CREATE FUNCTION FRBA_SUPERMERCADO.get_provincia_id(@provincia_nombre VARCHAR(50))
+RETURNS INT
+AS
+BEGIN
+    DECLARE @id_provincia INT;
 
+    SELECT @id_provincia = id_provincia
+    FROM FRBA_SUPERMERCADO.Provincia
+    WHERE provincia_nombre = @provincia_nombre;
+
+    RETURN @id_provincia;
+END;
+GO
+--
+CREATE FUNCTION FRBA_SUPERMERCADO.get_localidad_id(@localidad_nombre VARCHAR(50))
+RETURNS INT
+AS
+BEGIN
+    DECLARE @id_localidad INT;
+
+    SELECT @id_localidad = id_localidad
+    FROM FRBA_SUPERMERCADO.Localidad
+    WHERE localidad_nombre = @localidad_nombre;
+
+    RETURN @id_localidad;
+END;
+GO
 ----- PROCEDIMIENTOS DE MIGRACION -----
 /*
 --
@@ -329,29 +357,6 @@ BEGIN
 		super_nombre,
 		super_razon_social,
 		super_cuit,
-		super_iibb, --Ingr. Brut. N°: 133452135
-		super_fecha_inicio_actividad,
-		super_condicion_fiscal
-	)
-	SELECT DISTINCT m.SUPER_NOMBRE,
-		m.SUPER_RAZON_SOC,
-		m.SUPER_CUIT,
-		m.SUPER_IIBB,
-		m.SUPER_FECHA_INI_ACTIVIDAD,
-		m.SUPER_CONDICION_FISCAL
-	FROM gd_esquema.Maestra m
-	WHERE m.SUPER_IIBB IS NOT NULL
-	PRINT 'Migración de supermercado terminada';
-END
-GO
---
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_supermercado
-AS
-BEGIN
-	INSERT INTO FRBA_SUPERMERCADO.Supermercado(
-		super_nombre,
-		super_razon_social,
-		super_cuit,
 		super_iibb, 
 		super_fecha_inicio_actividad,
 		super_condicion_fiscal
@@ -394,7 +399,7 @@ CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Provincia
 AS
 BEGIN
 	INSERT INTO FRBA_SUPERMERCADO.Provincia(provincia_nombre)
-	SELECT CLIENTE_PROVINCIA AS provincia
+	SELECT CLIENTE_PROVINCIA
 		FROM gd_esquema.Maestra 
 		WHERE CLIENTE_PROVINCIA IS NOT NULL
 		UNION SELECT SUCURSAL_PROVINCIA AS provincia
@@ -411,7 +416,7 @@ CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_localidad
 AS
 BEGIN
 	INSERT INTO FRBA_SUPERMERCADO.Localidad(localidad_nombre)
-	SELECT CLIENTE_LOCALIDAD AS LOCALIDAD
+	SELECT CLIENTE_LOCALIDAD
 			FROM gd_esquema.Maestra 
 			WHERE CLIENTE_LOCALIDAD IS NOT NULL
 		UNION SELECT SUCURSAL_LOCALIDAD
@@ -444,6 +449,64 @@ BEGIN
         WHERE PROMO_CODIGO IS NOT NULL
 	PRINT 'Migración de promocion terminada';
 END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_caja
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Caja(
+        caja_numero,
+        id_tipo_caja
+      )
+      SELECT --select * from gd_esquema.Maestra
+        m.CAJA_NUMERO, 
+        c.id_tipo_caja
+      FROM gd_esquema.Maestra m
+	  JOIN FRBA_SUPERMERCADO.Tipo_Caja c ON 
+			c.tipo_caja_descripcion = (SELECT DISTINCT(SUBSTRING(m.CAJA_TIPO,11,20)))
+      WHERE CAJA_NUMERO IS NOT NULL
+	  PRINT 'Migración de caja terminada';
+END
+GO
+--
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_domicilio_supermercado
+AS
+BEGIN
+    -- Inserción de los domicilios en la tabla Domicilio
+    INSERT INTO FRBA_SUPERMERCADO.Domicilio (
+        domicilio_direccion,
+        id_localidad,
+        id_provincia
+    ) 
+    SELECT
+        m.SUPER_DOMICILIO,
+        FRBA_SUPERMERCADO.get_localidad_id(m.SUPER_DOMICILIO) AS id_localidad,
+        FRBA_SUPERMERCADO.get_provincia_id(m.SUPER_PROVINCIA) AS id_provincia
+    FROM gd_esquema.Maestra m
+    WHERE CLIENTE_DOMICILIO IS NOT NULL OR SUPER_DOMICILIO IS NOT NULL;
+    PRINT 'Migracion de Domicilio terminada';
+END;
+GO
+--
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_domicilio_cliente
+AS
+BEGIN
+    -- Inserción de los domicilios en la tabla Domicilio
+    INSERT INTO FRBA_SUPERMERCADO.Domicilio (
+        domicilio_direccion,
+        id_localidad,
+        id_provincia
+    ) 
+    SELECT
+        m.SUPER_DOMICILIO,
+        FRBA_SUPERMERCADO.get_localidad_id(m.SUPER_DOMICILIO) AS id_localidad,
+        FRBA_SUPERMERCADO.get_provincia_id(m.SUPER_PROVINCIA) AS id_provincia
+    FROM gd_esquema.Maestra m
+    WHERE CLIENTE_DOMICILIO IS NOT NULL OR SUPER_DOMICILIO IS NOT NULL;
+    PRINT 'Migracion de Domicilio terminada';
+END;
 GO
 
 ----- EJECUCION DE LOS PROCEDURES -----
