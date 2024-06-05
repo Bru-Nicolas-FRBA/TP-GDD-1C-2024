@@ -39,7 +39,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Regla(
 );
 ---
 CREATE TABLE FRBA_SUPERMERCADO.Supermercado (
-	super_id INT PRIMARY KEY IDENTITY(1,1),
+	id_supermercado INT PRIMARY KEY IDENTITY(1,1),
 	super_nombre VARCHAR(50) UNIQUE NOT NULL,
 	super_razon_social VARCHAR(100) NOT NULL,
 	super_cuit VARCHAR(30) NOT NULL,
@@ -83,21 +83,21 @@ CREATE TABLE FRBA_SUPERMERCADO.Caja(
 	caja_numero INT, 	
 	id_tipo_caja INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Tipo_Caja (id_tipo_caja)
 );
----kk
+---
 CREATE TABLE FRBA_SUPERMERCADO.Domicilio (
 	id_domicilio INT PRIMARY KEY IDENTITY(1,1),
 	id_localidad INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Localidad(id_localidad) NOT NULL,
 	id_provincia INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Provincia(id_provincia) NOT NULL,
 	domicilio_direccion VARCHAR(100) NOT NULL,
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Sucursal (
 	id_sucursal INT PRIMARY KEY IDENTITY(1,1),
 	id_domicilio INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Domicilio(id_domicilio) NOT NULL,
-	id_supermercado INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Supermercado(super_id) NOT NULL,
+	id_supermercado INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Supermercado(id_supermercado) NOT NULL,
 	sucursal_numero INT NOT NULL, -- solo el numero
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Cliente(
 	id_cliente INT PRIMARY KEY IDENTITY(1,1),
 	cliente_dni INT NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Cliente(
 	cliente_mail VARCHAR(100) UNIQUE NOT NULL,
 	cliente_fecha_nacimiento DATE NOT NULL,
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Empleado(
     id_empleado INT PRIMARY KEY IDENTITY(1,1),
     id_sucursal INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Sucursal (id_sucursal) NOT NULL,
@@ -119,8 +119,9 @@ CREATE TABLE FRBA_SUPERMERCADO.Empleado(
     empleado_fecha_registro DATE NOT NULL,
     empleado_fecha_nacimiento DATE NOT NULL,
     empleado_email VARCHAR (30) UNIQUE NOT NULL,
+	empleado_telefono DECIMAL(8,0) UNIQUE NOT NULL,
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Producto (
 	id_producto INT PRIMARY KEY, -- PRODUCTO_NOMBRE
 	id_producto_categoria INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Producto_categoria(id_producto_categoria) NOT NULL,
@@ -129,7 +130,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Producto (
 	producto_descripcion VARCHAR(100) NOT NULL,
 	producto_precio DECIMAL(10,2) NOT NULL,
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Ticket( 
 	id_ticket INT PRIMARY KEY NOT NULL, -- TICKET_NUMERO
 	id_tipo_comprobante INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Tipo_Comprobante (id_tipo_comprobante) NOT NULL,
@@ -161,7 +162,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Item_Ticket(
 	id_ticket INT FOREIGN KEY (id_ticket) REFERENCES FRBA_SUPERMERCADO.Ticket (id_ticket) NOT NULL,
 	id_producto INT FOREIGN KEY (id_producto) REFERENCES FRBA_SUPERMERCADO.Producto (id_producto) NOT NULL,
 	id_tipo_comprobante INT FOREIGN KEY (id_tipo_comprobante) REFERENCES FRBA_SUPERMERCADO.Tipo_Comprobante (id_tipo_comprobante) NOT NULL,
-	id_sucursaL INT FOREIGN KEY (id_sucursal)  REFERENCES FRBA_SUPERMERCADO.Sucursal (id_sucursal) NOT NULL,
+	id_sucursal INT FOREIGN KEY (id_sucursal)  REFERENCES FRBA_SUPERMERCADO.Sucursal (id_sucursal) NOT NULL,
 	id_promocion INT FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion (id_promo) NOT NULL,
 	item_ticket_cantidad INT NOT NULL,
 	item_ticket_precio INT NOT NULL,
@@ -214,6 +215,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion_X_Producto (
 --
 GO
 ----- FUNCIONES PARA USAR -----
+--queda por definirse si es mas optimo llamar a las funciones o simplemente hacer los JOIN
 --
 CREATE FUNCTION FRBA_SUPERMERCADO.get_provincia_id(@provincia_nombre VARCHAR(50))
 RETURNS INT
@@ -240,6 +242,33 @@ BEGIN
     WHERE localidad_nombre = @localidad_nombre;
 
     RETURN @id_localidad;
+END;
+GO
+--
+CREATE FUNCTION FRBA_SUPERMERCADO.get_domicilio_id(@domicilio VARCHAR(50))
+RETURNS INT
+AS
+BEGIN
+    DECLARE @id_domicilio INT;
+
+    SELECT @id_domicilio = domicilio_direccion
+    FROM FRBA_SUPERMERCADO.Domicilio
+    WHERE domicilio_direccion = @domicilio;
+    RETURN @id_domicilio;
+END;
+GO
+--
+CREATE FUNCTION FRBA_SUPERMERCADO.get_sucursal_id(@domicilio VARCHAR(50))
+RETURNS INT
+AS
+BEGIN
+	DECLARE @id_domicilio INT;
+	
+    SELECT @id_domicilio = s.id_domicilio
+    FROM FRBA_SUPERMERCADO.Sucursal s
+    WHERE s.id_domicilio = FRBA_SUPERMERCADO.get_domicilio_id(@domicilio);
+    
+    RETURN @id_domicilio;
 END;
 GO
 ----- PROCEDIMIENTOS DE MIGRACION -----
@@ -470,7 +499,7 @@ END
 GO
 --
 --
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_domicilio_supermercado
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_domicilio
 AS
 BEGIN
     -- Inserción de los domicilios en la tabla Domicilio
@@ -485,28 +514,118 @@ BEGIN
         FRBA_SUPERMERCADO.get_provincia_id(m.SUPER_PROVINCIA) AS id_provincia
     FROM gd_esquema.Maestra m
     WHERE CLIENTE_DOMICILIO IS NOT NULL OR SUPER_DOMICILIO IS NOT NULL;
+	INSERT INTO FRBA_SUPERMERCADO.Domicilio (
+        domicilio_direccion,
+        id_localidad,
+        id_provincia
+    ) 
+    SELECT
+        m.CLIENTE_DOMICILIO,
+        FRBA_SUPERMERCADO.get_localidad_id(m.CLIENTE_LOCALIDAD),
+        FRBA_SUPERMERCADO.get_provincia_id(m.CLIENTE_PROVINCIA)
+    FROM gd_esquema.Maestra m
+    WHERE CLIENTE_DOMICILIO IS NOT NULL;
     PRINT 'Migracion de Domicilio terminada';
+    --PRINT 'Migracion de Domicilio terminada';
 END;
 GO
 --
---
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_domicilio_cliente
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Sucursal
 AS
 BEGIN
-    -- Inserción de los domicilios en la tabla Domicilio
-    INSERT INTO FRBA_SUPERMERCADO.Domicilio (
-        domicilio_direccion,
-        id_localidad,
-        id_provincia
-    ) 
-    SELECT
-        m.SUPER_DOMICILIO,
-        FRBA_SUPERMERCADO.get_localidad_id(m.SUPER_DOMICILIO) AS id_localidad,
-        FRBA_SUPERMERCADO.get_provincia_id(m.SUPER_PROVINCIA) AS id_provincia
-    FROM gd_esquema.Maestra m
-    WHERE CLIENTE_DOMICILIO IS NOT NULL OR SUPER_DOMICILIO IS NOT NULL;
-    PRINT 'Migracion de Domicilio terminada';
-END;
+	INSERT INTO FRBA_SUPERMERCADO.Sucursal (
+	id_domicilio,
+	id_supermercado,
+	sucursal_numero -- solo el numero
+	)
+	SELECT
+		FRBA_SUPERMERCADO.get_domicilio_id(m.SUPER_DOMICILIO),
+		s.id_supermercado,
+		(SELECT DISTINCT(SUBSTRING(m.SUCURSAL_NOMBRE,11,20)))		
+	FROM gd_esquema.Maestra m
+	JOIN FRBA_SUPERMERCADO.Supermercado s ON m.SUPER_CUIT = s.super_cuit
+	WHERE 1 IS NOT NULL
+	PRINT 'Migración de sucursal terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_cliente
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Cliente(
+		cliente_dni,
+		cliente_id_domicilio,
+		cliente_nombre,
+		cliente_apellido,
+		cliente_fecha_registro,
+		cliente_mail,
+		cliente_fecha_nacimiento
+	)
+	SELECT DISTINCT
+		m.CLIENTE_DNI,
+		FRBA_SUPERMERCADO.get_domicilio_id(m.CLIENTE_DOMICILIO),
+		m.CLIENTE_NOMBRE,
+		m.CLIENTE_APELLIDO,
+		m.CLIENTE_FECHA_REGISTRO,
+		m.CLIENTE_MAIL,
+		m.CLIENTE_FECHA_NACIMIENTO
+	FROM gd_esquema.Maestra m
+	WHERE m.CLIENTE_DNI IS NOT NULL
+	ORDER BY m.CLIENTE_DNI
+	PRINT 'Migración de cliente terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Empleado
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Empleado(
+		id_sucursal,
+    	empleado_nombre,
+		empleado_apellido,
+		empleado_dni,
+		empleado_fecha_registro,
+		empleado_fecha_nacimiento,
+		empleado_email,
+		empleado_telefono
+	)
+	SELECT 
+		FRBA_SUPERMERCADO.get_sucursal_id(m.SUCURSAL_DIRECCION),
+		m.EMPLEADO_NOMBRE,
+		m.EMPLEADO_APELLIDO,
+		m.EMPLEADO_DNI,
+		m.EMPLEADO_FECHA_REGISTRO,
+		m.CLIENTE_FECHA_REGISTRO,
+		m.EMPLEADO_MAIL,
+		m.EMPLEADO_TELEFONO
+	FROM gd_esquema.Maestra m
+	WHERE m.EMPLEADO_DNI IS NOT NULL
+	PRINT 'Migración de empleado terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Producto
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Producto(
+		id_producto, -- PRODUCTO_NOMBRE
+		id_producto_categoria,
+		id_producto_subcategoria,
+		id_marca,
+		producto_descripcion,
+		producto_precio
+	)
+	SELECT 
+		(CAST(SUBSTRING(m.PRODUCTO_NOMBRE,8,20) AS DECIMAL(11,0))),
+		(CAST(SUBSTRING(m.PRODUCTO_CATEGORIA, 13,20) AS INT)),
+		(CAST(SUBSTRING(m.PRODUCTO_SUB_CATEGORIA, 16,20) AS INT)),
+		(CAST(SUBSTRING(m.PRODUCTO_MARCA,9,10) AS DECIMAL(10,0))),
+		(CAST(SUBSTRING(m.PRODUCTO_DESCRIPCION,29,70) AS DECIMAL(11,0))),
+		m.PRODUCTO_PRECIO
+	FROM gd_esquema.Maestra m
+	WHERE PRODUCTO_NOMBRE IS NOT NULL
+	PRINT 'Migración de producto terminada';
+END
 GO
 
 ----- EJECUCION DE LOS PROCEDURES -----
