@@ -3,8 +3,11 @@ GO
 
 CREATE SCHEMA [FRBA_SUPERMERCADO]
 GO
-
+------------------------------------------------------------------------------------------------
 ----- CREACIÓN DE TABLAS (respetar orden establecido) -----
+------------------------------------------------------------------------------------------------
+-- NO SE PUEDE CAMBIAR NADA ASI QUE LOS SUBSTRING Y CAST HAY QUE SACARLOS TODOS RAAAHHAHAHAHAHAAH
+
 ---
 CREATE TABLE FRBA_SUPERMERCADO.Producto_categoria (id_producto_categoria INT PRIMARY KEY);
 ---
@@ -76,7 +79,9 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion(
 	promo_fecha_fin DATE NOT NULL,
 	promo_valor_descuento DECIMAL(6,2) NOT NULL, 
 );
+------------------------------------------------------------------------------------------------
 ----- Tablas con Clave foranea
+------------------------------------------------------------------------------------------------
 ---
 CREATE TABLE FRBA_SUPERMERCADO.Caja(
 	id_caja INT PRIMARY KEY IDENTITY(1,1),
@@ -143,7 +148,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Ticket(
 	ticket_monto_total_promociones_aplicadas INT NOT NULL,
 	ticket_monto_total_descuentos_aplicados INT NOT NULL,	
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Envio(
 	id_envio INT PRIMARY KEY IDENTITY(1,1),
 	id_ticket INT FOREIGN KEY REFERENCES FRBA_SUPERMERCADO.Ticket (id_ticket) NOT NULL,
@@ -156,7 +161,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Envio(
 	envio_costo DECIMAL(10, 2) NOT NULL,
 	envio_estado_envio VARCHAR(50) NOT NULL,
 );
---
+---
 CREATE TABLE FRBA_SUPERMERCADO.Item_Ticket(
 	id_item_ticket INT PRIMARY KEY IDENTITY(1,1),
 	id_ticket INT FOREIGN KEY (id_ticket) REFERENCES FRBA_SUPERMERCADO.Ticket (id_ticket) NOT NULL,
@@ -180,7 +185,9 @@ CREATE TABLE FRBA_SUPERMERCADO.Pago(
 	medio_de_pago_fecha_vencimiento DATE,
 	medio_de_pago_descuento_aplicado DECIMAL(10, 2),
 );
+------------------------------------------------------------------------------------------------
 ----- TABLAS COMPOSICION
+------------------------------------------------------------------------------------------------
 CREATE TABLE FRBA_SUPERMERCADO.Regla_x_Promocion (
 	id_promocion INT,
 	id_regla INT,
@@ -214,7 +221,9 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion_X_Producto (
 );
 --
 GO
+------------------------------------------------------------------------------------------------
 ----- FUNCIONES PARA USAR -----
+------------------------------------------------------------------------------------------------
 --queda por definirse si es mas optimo llamar a las funciones o simplemente hacer los JOIN
 --
 CREATE FUNCTION FRBA_SUPERMERCADO.get_provincia_id(@provincia_nombre VARCHAR(50))
@@ -271,20 +280,36 @@ BEGIN
     RETURN @id_domicilio;
 END;
 GO
------ PROCEDIMIENTOS DE MIGRACION -----
-/*
 --
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_
+CREATE FUNCTION FRBA_SUPERMERCADO.get_empleado_id(@mail VARCHAR(30))
+RETURNS INT
 AS
 BEGIN
-	INSERT INTO
-	SELECT
-	FROM
-	WHERE
-	PRINT 'Migración de terminada';
-END
+	DECLARE @id_empleado INT;
+	
+    SELECT @id_empleado = id_empleado
+    FROM FRBA_SUPERMERCADO.Empleado
+    WHERE empleado_email = @mail;
+    RETURN @id_empleado;
+END;
 GO
-*/
+--
+CREATE FUNCTION FRBA_SUPERMERCADO.get_cliente_id(@dni INT)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @id_cliente INT;
+	
+    SELECT @id_cliente = id_cliente
+    FROM FRBA_SUPERMERCADO.Cliente
+    WHERE cliente_dni = @dni;
+    RETURN @id_cliente;
+END;
+GO
+------------------------------------------------------------------------------------------------
+----- PROCEDIMIENTOS DE MIGRACION -----
+------------------------------------------------------------------------------------------------
+
 CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_categoria
 AS
 BEGIN
@@ -468,7 +493,7 @@ BEGIN
 		promo_fecha_fin,
 		promo_valor_descuento
       )
-      SELECT
+      SELECT DISTINCT --esto revisar si tiene que ir o no
         PROMO_CODIGO,
         PROMOCION_DESCRIPCION,
         PROMOCION_FECHA_INICIO,
@@ -627,7 +652,142 @@ BEGIN
 	PRINT 'Migración de producto terminada';
 END
 GO
-
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_ticket
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Ticket(
+        id_ticket,
+	    id_tipo_comprobante,
+	    id_sucursal,
+	    id_caja,
+	    id_empleado,
+	    ticket_fecha_hora,
+	    ticket_subtotal,
+	    ticket_total,
+	    ticket_monto_total_promociones_aplicadas,
+	    ticket_monto_total_descuentos_aplicados
+    )
+	SELECT DISTINCT
+        m.TICKET_NUMERO,
+        tc.id_tipo_comprobante,
+        FRBA_SUPERMERCADO.get_sucursal_id(m.SUCURSAL_DIRECCION),
+        caja.id_caja,
+        FRBA_SUPERMERCADO.get_empleado_id(m.EMPLEADO_MAIL),
+        m.TICKET_FECHA_HORA,
+        m.TICKET_SUBTOTAL_PRODUCTOS,
+        (m.TICKET_TOTAL_DESCUENTO_APLICADO + m.TICKET_TOTAL_DESCUENTO_APLICADO_MP),
+        m.TICKET_TOTAL_ENVIO
+	FROM gd_esquema.Maestra m
+        JOIN FRBA_SUPERMERCADO.Tipo_Caja caja ON m.CAJA_NUMERO = caja.caja_numero
+        JOIN FRBA_SUPERMERCADO.Tipo_Comprobante tc ON m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre
+	WHERE m.TICKET_NUMERO IS NOT NULL
+	PRINT 'Migración de Ticket terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_envio
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Envio(
+        id_ticket,
+        id_cliente,
+        envio_fecha_programada,
+        envio_horario_inicio,
+        envio_horario_fin,
+        envio_fecha_entrega,
+        envio_estado,
+        envio_costo
+    )
+	SELECT 
+        m.TICKET_NUMERO,
+        FRBA_SUPERMERCADO.get_cliente_id(m.CLIENTE_DNI),
+        m.ENVIO_FECHA_PROGRAMADA,
+        m.ENVIO_HORA_INICIO,
+        m.ENVIO_HORA_FIN,
+        m.ENVIO_FECHA_ENTREGA,
+        m.ENVIO_ESTADO,
+        m.ENVIO_COSTO
+	FROM gd_esquema.Maestra m
+	WHERE
+        m.ENVIO_HORA_INICIO IS NOT NULL
+        AND m.ENVIO_HORA_FIN IS NOT NULL
+        AND m.ENVIO_FECHA_ENTREGA IS NOT NULL
+    
+	PRINT 'Migración de envio terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_item_ticket
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Item_Ticket(
+        id_ticket, --ticketunmero
+        id_producto,
+        id_tipo_comprobante,
+        id_sucursal,
+        id_promocion,
+        item_ticket_cantidad,
+        item_ticket_precio
+    )
+	SELECT 
+        m.TICKET_NUMERO,
+        m.PRODUCTO_NOMBRE, --tiene letras    
+        tc.id_tipo_comprobante,
+        FRBA_SUPERMERCADO.get_sucursal_id(m.SUCURSAL_DIRECCION),
+        m.PROMO_CODIGO,
+        m. TICKET_DET_CANTIDAD,
+        m.TICKET_DET_PRECIO
+    FROM gd_esquema.Maestra m
+        JOIN FRBA_SUPERMERCADO.Tipo_Comprobante tc ON m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre
+	WHERE m.TICKET_NUMERO IS NOT NULL
+	PRINT 'Migración de item ticket terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_pago
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.pago(
+        id_tipo_medio_de_pago,
+        id_cliente,
+        id_descuento,
+        pago_fecha,
+        pago_importe,
+        pago_numero_tarjeta,
+        medio_de_pago_cuotas,
+        medio_de_pago_fecha_vencimiento,
+        medio_de_pago_descuento_aplicado
+    )
+	SELECT
+        mp.medio_de_pago_detalle,
+        FRBA_SUPERMERCADO.get_cliente_id(m.CLIENTE_DNI),
+        m.DESCUENTO_CODIGO,
+        m.PAGO_FECHA,
+        m.PAGO_IMPORTE,
+        m.PAGO_TARJETA_NRO,
+        m.PAGO_TARJETA_CUOTAS,
+        m.PAGO_TARJETA_FECHA_VENC,
+        m.PAGO_DESCUENTO_APLICADO
+    FROM gd_esquema.Maestra m
+        JOIN FRBA_SUPERMERCADO.Tipo_medio_de_pago mp ON m.PAGO_MEDIO_PAGO = mp.medio_de_pago_detalle
+	WHERE m.TICKET_NUMERO IS NOT NULL
+	PRINT 'Migración de Pago terminada';
+END
+GO
+/*
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_
+AS
+BEGIN
+	INSERT INTO
+	SELECT
+	FROM
+	WHERE
+	PRINT 'Migración de terminada';
+END
+GO
+*/
 ----- EJECUCION DE LOS PROCEDURES -----
 
 ----- COSAS PARA PROBAR -----
