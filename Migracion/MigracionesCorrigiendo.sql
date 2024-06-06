@@ -1,3 +1,12 @@
+/* COSAS DE MIGRACION */
+--revisar en que casos conviene usar JOIN o FUNCION, porque JOIN conviene con tabla grande, FUNCION conviene con tabla chiquita 
+--Falta calcular bien el valor del descuento de la promo porque para c/ticket varia por el precio
+--Creo que la funcion get_sucursal_id es alpedo y es necesario usar JOINs
+--Ver si get_cliente_id se puede hacer mejor, alpedo que dependa del DNI
+--Revisar ticket_x_pago porque dudo mucho
+
+/* COSAS QUE DICE EN LA CONSIGNA IMPORTANTES*/
+--No se puede modificar los datos, entonces los CAST y SUBSTRING tienen que irse y nos manenamos sin eso
 USE [GD1C2024]
 GO
 
@@ -72,8 +81,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Localidad(
 );
 ---
 CREATE TABLE FRBA_SUPERMERCADO.Promocion(
-	id_promo INT PRIMARY KEY IDENTITY(1,1),
-	promo_codigo INT NOT NULL, -- codigo de uso (se repite)
+	id_promo INT PRIMARY KEY NOT NULL,
 	promo_descripcion VARCHAR(50) UNIQUE NOT NULL,
 	promo_fecha_inicio DATE NOT NULL,
 	promo_fecha_fin DATE NOT NULL,
@@ -219,7 +227,6 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion_X_Producto (
 	CONSTRAINT FK_Promoxion_X_Producto_id_promocion FOREIGN KEY (id_promocion) REFERENCES FRBA_SUPERMERCADO.Promocion(id_promo),
 	CONSTRAINT FK_Promoxion_X_Producto_id_producto FOREIGN KEY (id_producto) REFERENCES FRBA_SUPERMERCADO.Producto(id_producto)
 );
---
 GO
 ------------------------------------------------------------------------------------------------
 ----- FUNCIONES PARA USAR -----
@@ -304,6 +311,19 @@ BEGIN
     FROM FRBA_SUPERMERCADO.Cliente
     WHERE cliente_dni = @dni;
     RETURN @id_cliente;
+END;
+GO
+--
+CREATE FUNCTION FRBA_SUPERMERCADO.get_regla_id(@descripcion INT)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @id_regla INT;
+	
+    SELECT @id_regla = id_regla
+    FROM FRBA_SUPERMERCADO.Regla
+    WHERE regla_descripcion = @descripcion;
+    RETURN @id_regla;
 END;
 GO
 ------------------------------------------------------------------------------------------------
@@ -487,18 +507,18 @@ CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_promocion
 AS
 BEGIN
 	INSERT INTO FRBA_SUPERMERCADO.Promocion(
-		promo_codigo, -- codigo de uso (se repite)
+		promo_codigo,
 		promo_descripcion,
 		promo_fecha_inicio,
 		promo_fecha_fin,
-		promo_valor_descuento
+		promo_valor_descuento -- KK FALTA CALCULARLO BIEN porque no se enciente nada
       )
       SELECT DISTINCT --esto revisar si tiene que ir o no
         PROMO_CODIGO,
         PROMOCION_DESCRIPCION,
         PROMOCION_FECHA_INICIO,
         PROMOCION_FECHA_FIN,
-        PROMO_APLICADA_DESCUENTO
+        PROMO_APLICADA_DESCUENTO 
       FROM gd_esquema.Maestra
         WHERE PROMO_CODIGO IS NOT NULL
 	PRINT 'Migración de promocion terminada';
@@ -641,7 +661,7 @@ BEGIN
 		producto_precio
 	)
 	SELECT 
-		(CAST(SUBSTRING(m.PRODUCTO_NOMBRE,8,20) AS DECIMAL(11,0))),
+		m.PRODUCTO_NOMBRE,
 		(CAST(SUBSTRING(m.PRODUCTO_CATEGORIA, 13,20) AS INT)),
 		(CAST(SUBSTRING(m.PRODUCTO_SUB_CATEGORIA, 16,20) AS INT)),
 		(CAST(SUBSTRING(m.PRODUCTO_MARCA,9,10) AS DECIMAL(10,0))),
@@ -752,7 +772,7 @@ BEGIN
         id_tipo_medio_de_pago,
         id_cliente,
         id_descuento,
-        pago_fecha,
+		pago_fecha,
         pago_importe,
         pago_numero_tarjeta,
         medio_de_pago_cuotas,
@@ -763,7 +783,7 @@ BEGIN
         mp.medio_de_pago_detalle,
         FRBA_SUPERMERCADO.get_cliente_id(m.CLIENTE_DNI),
         m.DESCUENTO_CODIGO,
-        m.PAGO_FECHA,
+		m.PAGO_FECHA,
         m.PAGO_IMPORTE,
         m.PAGO_TARJETA_NRO,
         m.PAGO_TARJETA_CUOTAS,
@@ -775,20 +795,88 @@ BEGIN
 	PRINT 'Migración de Pago terminada';
 END
 GO
-/*
 --
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_regla_x_promocion
 AS
 BEGIN
-	INSERT INTO
-	SELECT
-	FROM
-	WHERE
-	PRINT 'Migración de terminada';
+	INSERT INTO FRBA_SUPERMERCADO.Regla_x_Promocion(
+		id_promocion,
+		id_regla
+	)
+	SELECT 
+		m.PROMO_CODIGO,
+		FRBA_SUPERMERCADO.get_regla_id(m.REGLA_DESCRIPCION)
+	FROM gd_esquema.Maestra m
+	WHERE 
+		m.PROMO_CODIGO IS NOT NULL
+		AND 2 IS NOT NULL
+	PRINT 'Migración de regla x promocion terminada';
 END
 GO
-*/
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_ticket_x_pago
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Ticket_X_Pago(
+		id_ticket,
+		id_pago
+	)
+	SELECT
+		m.TICKET_NUMERO,
+		p.id_pago
+	FROM gd_esquema.Maestra m
+		JOIN FRBA_SUPERMERCADO.Pago p ON --No creo que un mismo cliente pueda hacer 2 pagos en el MISMO SEGUNDO
+			m.FRBA_SUPERMERCADO.get_cliente_id(m.CLIENTE_DNI) = p.id_cliente 
+			AND m.PAGO_FECHA = p.pago_fecha
+	WHERE m.TICKET_NUMERO IS NOT NULL
+	PRINT 'Migración de ticket_x_pago terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_promocion_x_item_ticekt
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Promocion_X_Item_Ticket(
+		id_promocion,
+		id_item_ticket
+	)
+	SELECT
+		m.PROMO_CODIGO,
+		id.id_item_ticket
+	FROM gd_esquema.Maestra m 
+		JOIN FRBA_SUPERMERCADO.Item_Ticket it ON
+			m.TICKET_NUMERO = it.id_ticket
+			AND m.PRODUCTO_NOMBRE = it.id_producto
+			AND m.PROMO_CODIGO = it.id_promocion
+	WHERE 
+		m.TICKET_NUMERO IS NOT NULL
+		AND m.PROMO_CODIGO IS NOT NULL 
+	PRINT 'Migración de promo_x_item_ticket terminada';
+END
+GO
+--
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_promocion_x_producto
+AS
+BEGIN
+	INSERT INTO FRBA_SUPERMERCADO.Promocion_X_Producto(
+		id_promocion,
+		id_producto
+	)
+	SELECT
+		 m.PROMO_CODIGO,
+		 m.PRODUCTO_NOMBRE
+	FROM gd_esquema.Maestra m
+	WHERE 
+		m.TICKET_NUMERO IS NOT NULL
+		AND m.PROMO_CODIGO IS NOT NULL
+	PRINT 'Migración de promocion_x_producto terminada';
+END
+GO
+
+------------------------------------------------------------------------------------------------
 ----- EJECUCION DE LOS PROCEDURES -----
+------------------------------------------------------------------------------------------------
+
 
 ----- COSAS PARA PROBAR -----
 --select * from gd_esquema.Maestra
