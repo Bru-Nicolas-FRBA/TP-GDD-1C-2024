@@ -15,7 +15,6 @@ GO
 ------------------------------------------------------------------------------------------------
 ----- CREACIÓN DE TABLAS (respetar orden establecido) -----
 ------------------------------------------------------------------------------------------------
--- NO SE PUEDE CAMBIAR NADA ASI QUE LOS SUBSTRING Y CAST HAY QUE SACARLOS TODOS RAAAHHAHAHAHAHAAH
 
 ---
 CREATE TABLE FRBA_SUPERMERCADO.Producto_categoria (id_producto_categoria INT PRIMARY KEY);
@@ -88,7 +87,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Promocion(
 	promo_valor_descuento DECIMAL(6,2) NOT NULL, 
 );
 ------------------------------------------------------------------------------------------------
------ Tablas con Clave foranea
+----- Tablas con Clave foranea -----
 ------------------------------------------------------------------------------------------------
 ---
 CREATE TABLE FRBA_SUPERMERCADO.Caja(
@@ -194,7 +193,7 @@ CREATE TABLE FRBA_SUPERMERCADO.Pago(
 	medio_de_pago_descuento_aplicado DECIMAL(10, 2),
 );
 ------------------------------------------------------------------------------------------------
------ TABLAS COMPOSICION
+----- TABLAS COMPOSICION -----
 ------------------------------------------------------------------------------------------------
 CREATE TABLE FRBA_SUPERMERCADO.Regla_x_Promocion (
 	id_promocion INT,
@@ -327,7 +326,7 @@ BEGIN
 END;
 GO
 ------------------------------------------------------------------------------------------------
------ PROCEDIMIENTOS DE MIGRACION -----
+----- PROCEDIMIENTOS DE MIGRACION (respetar orden establecido) -----
 ------------------------------------------------------------------------------------------------
 
 CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_categoria
@@ -469,7 +468,7 @@ BEGIN
 END
 GO
 --
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Provincia
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_provincia
 AS
 BEGIN
 	INSERT INTO FRBA_SUPERMERCADO.Provincia(provincia_nombre)
@@ -575,7 +574,7 @@ BEGIN
 END;
 GO
 --
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Sucursal
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_sucursal
 AS
 BEGIN
 	INSERT INTO FRBA_SUPERMERCADO.Sucursal (
@@ -621,7 +620,7 @@ BEGIN
 END
 GO
 --
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Empleado
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_empleado
 AS
 BEGIN
 	INSERT INTO FRBA_SUPERMERCADO.Empleado(
@@ -649,7 +648,7 @@ BEGIN
 END
 GO
 --
-CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_Producto
+CREATE PROCEDURE FRBA_SUPERMERCADO.migrar_producto
 AS
 BEGIN
 	INSERT INTO FRBA_SUPERMERCADO.Producto(
@@ -876,7 +875,78 @@ GO
 ------------------------------------------------------------------------------------------------
 ----- EJECUCION DE LOS PROCEDURES -----
 ------------------------------------------------------------------------------------------------
+BEGIN TRANSACTION
+BEGIN TRY
+	----- TABLAS BASE -----
+	EXEC FRBA_SUPERMERCADO.migrar_categoria
+	EXEC FRBA_SUPERMERCADO.migrar_subcategoria
+	EXEC FRBA_SUPERMERCADO.migrar_marca
+	EXEC FRBA_SUPERMERCADO.migrar_tipo_medio_pago
+	EXEC FRBA_SUPERMERCADO.migrar_descuento
+	EXEC FRBA_SUPERMERCADO.migrar_regla
+	EXEC FRBA_SUPERMERCADO.migrar_supermercado
+	EXEC FRBA_SUPERMERCADO.migrar_tipo_caja
+	EXEC FRBA_SUPERMERCADO.migrar_tipo_comprobante
+	EXEC FRBA_SUPERMERCADO.migrar_provincia
+	EXEC FRBA_SUPERMERCADO.migrar_localidad
+	EXEC FRBA_SUPERMERCADO.migrar_promocion
+	----- TABLAS CON CLAVE FORANEA -----	
+	EXEC FRBA_SUPERMERCADO.migrar_caja
+	EXEC FRBA_SUPERMERCADO.migrar_domicilio
+	EXEC FRBA_SUPERMERCADO.migrar_sucursal
+	EXEC FRBA_SUPERMERCADO.migrar_cliente
+	EXEC FRBA_SUPERMERCADO.migrar_empleado
+	EXEC FRBA_SUPERMERCADO.migrar_producto
+	EXEC FRBA_SUPERMERCADO.migrar_ticket
+	EXEC FRBA_SUPERMERCADO.migrar_envio
+	EXEC FRBA_SUPERMERCADO.migrar_item_ticket
+	EXEC FRBA_SUPERMERCADO.migrar_pago
+	----- TABLAS COMPOSICION -----
+	EXEC FRBA_SUPERMERCADO.migrar_regla_x_promocion
+	EXEC FRBA_SUPERMERCADO.migrar_ticket_x_pago
+	EXEC FRBA_SUPERMERCADO.migrar_promocion_x_item_ticekt
+	EXEC FRBA_SUPERMERCADO.migrar_promocion_x_producto
+END TRY
+BEGIN CATCH
+	ROLLBACK TRANSACTION;
+	RAISERROR ('Error al migrar tablas. Chequear si las tablas estan vacias.', 14, 1)
+END CATCH;
 
-
------ COSAS PARA PROBAR -----
---select * from gd_esquema.Maestra
+IF (
+	EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_categoria) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_subcategoria)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_marca)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_tipo_medio_pago)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_descuento) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_regla) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_supermercado) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_tipo_caja) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_tipo_comprobante) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_provincia) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_localidad) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_promocion) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_caja) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_domicilio) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_sucursal) 
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_cliente)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_empleado)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_producto)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_ticket)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_envio)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_item_ticket)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_pago)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_regla_x_promocion)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_ticket_x_pago)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_promocion_x_item_ticekt)
+	AND EXISTS (SELECT 1 FROM FRBA_SUPERMERCADO.migrar_promocion_x_producto)
+)
+	BEGIN
+		PRINT 'Las tablas fueron migradas correctamente.'
+		COMMIT TRANSACTION;
+	END
+ELSE
+	BEGIN
+		ROLLBACK TRANSACTION;
+		RAISERROR ('Error al migrar una o más tablas. Ninguna operación no fue realizada.', 14, 1)
+	END
+GO
