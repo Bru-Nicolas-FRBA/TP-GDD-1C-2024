@@ -23,17 +23,43 @@ Turnos
 Medio de Pago
 Categoria/SubCatergoria de Productos
 */
+	----- TABLA TIEMPO -------
+CREATE TABLE BI_REYES_DE_DATOS.BI_Tiempo(
+	id_tiempo INT PRIMARY KEY IDENTITY(1,1),
+	anio INT NOT NULL, 
+	cuatrimestre INT NOT NULL,
+	mes INT NOT NULL
+);
 
------ TABLA TURNOS -------
+	----- TABLA UBICACION -------
+CREATE TABLE BI_REYES_DE_DATOS.BI_Ubicacion(
+	id_ubicacion INT PRIMARY KEY IDENTITY(1,1),
+	id_provincia INT NOT NULL,
+	id_localidad INT NOT NULL
+);
+
+	----- TABLA SUCURSAL -------
+CREATE TABLE BI_REYES_DE_DATOS.BI_Sucursal(
+	id_sucursal INT PRIMARY KEY IDENTITY(1,1)
+);
+
+	----- TABLA RANGO ETARIO -------
+CREATE TABLE BI_REYES_DE_DATOS.BI_Rango_Etario(
+	id_rango_etario INT PRIMARY KEY,
+	rango_etario NVARCHAR(255) NOT NULL
+);
+
+
+	----- TABLA TURNOS -------
 CREATE TABLE BI_REYES_DE_DATOS.BI_turno(
     id_turno INT PRIMARY KEY IDENTITY(1,1),
     turno NVARCHAR(255) NOT NULL
 );
 
 -- Insertar los turnos
-INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00');
-INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00');
-INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00');
+--INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00');
+--INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00');
+--INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00');
 
 ----- TABLA MEDIO DE PAGO -------
 
@@ -45,7 +71,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_medio_de_pago(
 
 ----- TABLA CATEGORIA Y SUBCATEGORIA -------
 
-CREATE TABLE BI_OPTIC.BI_categoria_producto(
+CREATE TABLE BI_REYES_DE_DATOS.BI_categoria_producto(
     id_categoria_producto INT PRIMARY KEY IDENTITY(1,1),
     categoria_producto NVARCHAR(255) NOT NULL,
     subcategoria_producto NVARCHAR(255) NULL -- NULL es para categorías que no tienen subcategoría
@@ -86,6 +112,26 @@ GO
 
 ---------- CREACIÓN DE FUNCIONES ----------
 
+CREATE FUNCTION BI_REYES_DE_DATOS.rangoEtario(@fechaNacimiento AS DATE)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @edad INT
+	SET @edad = YEAR(GETDATE()) - YEAR(@fechaNacimiento) 
+	DECLARE @rangoEtario INT
+	
+	IF(@edad < 25)
+		SET @rangoEtario = 1
+	IF(@edad BETWEEN 25 AND 34)
+		SET @rangoEtario = 2
+	IF(@edad BETWEEN 35 AND 55)
+		SET @rangoEtario = 3
+	IF(@edad > 55)
+		SET @rangoEtario = 4
+
+RETURN @rangoEtario
+END
+GO
 
 
 ---------- CREACIÓN DE MIGRACIONES ----------
