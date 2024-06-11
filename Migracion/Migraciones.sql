@@ -684,21 +684,20 @@ INSERT INTO REYES_DE_DATOS.Regla_x_Promocion(
 PRINT 'Migración de regla x promocion terminada';
 
 INSERT INTO REYES_DE_DATOS.Ticket_X_Pago(--kk
-	t.id_ticket,
+	id_ticket,
 	id_pago
 	)
 	SELECT DISTINCT
-		m.TICKET_NUMERO,
+		t.id_ticket,
 		p.id_pago
 	FROM gd_esquema.Maestra m
-		JOIN REYES_DE_DATOS.Ticket t ON m.TICKET_NUMERO = t.ticket_numero AND m.TICKET_FECHA_HORA = t.ticket_fecha_hora AND m.TICKET_TOTAL_TICKET = t.ticket_total
-		JOIN REYES_DE_DATOS.Pago p ON p.pago_fecha = m.PAGO_FECHA and p.pago_importe = m.PAGO_IMPORTE
-	WHERE m.TICKET_NUMERO IS NOT NULL
-		AND m.PAGO_FECHA IS NOT NULL
-		AND m.PAGO_IMPORTE IS NOT NULL
+		JOIN REYES_DE_DATOS.Ticket t ON m.TICKET_NUMERO = t.ticket_numero
+		JOIN REYES_DE_DATOS.Pago p ON t.ticket_total = p.pago_importe AND t.ticket_fecha_hora = p.pago_fecha
+	WHERE t.id_ticket IS NOT NULL
+		and p.id_pago IS NOT NULL
 PRINT 'Migración de ticket_x_pago terminada';
 
-INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(--kk
+INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(--esta tiene que tardar mucho porque a cada item le pertenece una promocion (esto nos come 30s de ejecucion)
 	id_promocion,
 	id_item_ticket
 	)
