@@ -134,9 +134,9 @@ BEGIN
 		SET @rangoEtario = 1
 	IF(@edad BETWEEN 25 AND 34)
 		SET @rangoEtario = 2
-	IF(@edad BETWEEN 35 AND 55)
+	IF(@edad BETWEEN 35 AND 50)
 		SET @rangoEtario = 3
-	IF(@edad > 55)
+	IF(@edad > 50)
 		SET @rangoEtario = 4
 
 RETURN @rangoEtario
@@ -146,7 +146,18 @@ GO
 
 ---------- CREACIÓN DE MIGRACIONES ----------
 
+CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_rango_etario
+	AS
+	BEGIN 
+	INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (1, '<25')
+	INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (2, '25-34')
+	INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (3, '35-50')
+	INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (4, '<50')
 
+	PRINT 'Migración de BI_rango_etario terminada';
+	END
+	GO
+	
 ---------- CREACION DE VIEWS ----------
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 CREATE VIEW Vista_Ticket_Promedio_Mensual AS
