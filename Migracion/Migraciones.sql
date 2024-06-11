@@ -268,7 +268,7 @@ ALTER TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket ADD CONSTRAINT FK_Promocion_X
 
 --ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT PK_Ticket_X_Pago PRIMARY KEY (id_ticket, id_pago)
 ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT FK_Ticket_X_Pago_id_ticket FOREIGN KEY (id_ticket) REFERENCES REYES_DE_DATOS.Ticket (id_ticket)
-ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT FK_Ticket_X_Pago_id_pago FOREIGN KEY (id_pago) REFERENCES REYES_DE_DATOS.Sucursal (id_sucursal)
+ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT FK_Ticket_X_Pago_id_pago FOREIGN KEY (id_pago) REFERENCES REYES_DE_DATOS.Pago (id_pago)
 
 --ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT PK_Regla_X_Promocion PRIMARY KEY (id_promocion, id_regla)
 ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT FK_Regla_X_Promocion_Promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
@@ -683,7 +683,7 @@ INSERT INTO REYES_DE_DATOS.Regla_x_Promocion(
 	WHERE m.PROMO_CODIGO IS NOT NULL AND 2 IS NOT NULL
 PRINT 'Migración de regla x promocion terminada';
 
-INSERT INTO REYES_DE_DATOS.Ticket_X_Pago(--kk
+INSERT INTO REYES_DE_DATOS.Ticket_X_Pago(
 	id_ticket,
 	id_pago
 	)
