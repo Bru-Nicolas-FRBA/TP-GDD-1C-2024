@@ -103,6 +103,16 @@ ADD CONSTRAINT PK_BI_Cliente_id_cliente PRIMARY KEY (id_cliente);
 ALTER TABLE BI_Producto
 ADD CONSTRAINT PK_BI_Producto_id_producto PRIMARY KEY (id_producto);
 
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_ventas(
+	id_venta INT PRIMARY KEY IDENTITY(1,1),
+	-- ver tabla Ventas ,
+	id_tiempo INT FOREIGN KEY REFERENCES BI_REYES_DE_DATOS.BI_Tiempo(id_tiempo) NOT NULL,
+	--ver que más
+	
+	
+);
+GO
+
 -- Tabla BI_Venta
 ALTER TABLE BI_Venta
 ADD CONSTRAINT PK_BI_Venta_id_venta PRIMARY KEY (id_venta);
