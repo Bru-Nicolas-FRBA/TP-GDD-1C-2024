@@ -23,6 +23,34 @@ Turnos
 Medio de Pago
 Categoria/SubCatergoria de Productos
 */
+
+----- TABLA TURNOS -------
+CREATE TABLE BI_REYES_DE_DATOS.BI_turno(
+    id_turno INT PRIMARY KEY IDENTITY(1,1),
+    turno NVARCHAR(255) NOT NULL
+);
+
+-- Insertar los turnos
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00');
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00');
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00');
+
+----- TABLA MEDIO DE PAGO -------
+
+CREATE TABLE BI_REYES_DE_DATOS.BI_medio_de_pago(
+    id_medio_de_pago INT PRIMARY KEY IDENTITY(1,1),
+    costo DECIMAL(18,2) NOT NULL,
+    medio_de_pago NVARCHAR(255) NOT NULL
+);
+
+----- TABLA CATEGORIA Y SUBCATEGORIA -------
+
+CREATE TABLE BI_OPTIC.BI_categoria_producto(
+    id_categoria_producto INT PRIMARY KEY IDENTITY(1,1),
+    categoria_producto NVARCHAR(255) NOT NULL,
+    subcategoria_producto NVARCHAR(255) NULL -- NULL es para categorías que no tienen subcategoría
+);
+
 -- Tabla BI_Cliente
 INSERT INTO BI_Cliente (id_cliente, cliente_dni, cliente_nombre, cliente_apellido, cliente_fecha_registro, cliente_mail, cliente_fecha_nacimiento)
 SELECT id_cliente, cliente_dni, cliente_nombre, cliente_apellido, cliente_fecha_registro, cliente_mail, cliente_fecha_nacimiento
@@ -364,14 +392,3 @@ FROM
     JOIN dbo.Cliente c ON t.id_cliente = c.id_cliente
     JOIN dbo.Item_Ticket it ON t.id_ticket = it.id_ticket
     JOIN dbo.Producto p ON it.id_producto = p.id_producto;
-
-
-
-
-
-
-
-
-
-
-
