@@ -775,12 +775,10 @@ IF (
 	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion_X_Producto)
 )
 	BEGIN
-		PRINT 'Las tablas fueron migradas correctamente.'
-		COMMIT TRANSACTION;	
+		PRINT 'Las tablas fueron migradas correctamente.'	
 	END
 ELSE
 	BEGIN
-		ROLLBACK TRANSACTION;
-		RAISERROR ('Error al migrar una o más tablas. Ninguna operación no fue realizada.', 14, 1)
+		RAISERROR ('Error al migrar una o más tablas', 14, 1)
 	END
 GO
