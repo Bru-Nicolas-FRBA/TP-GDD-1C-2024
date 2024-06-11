@@ -1,62 +1,28 @@
--- Creación de nuevas tablas para el modelo de BI
-CREATE TABLE BI_Cliente (
-    id_cliente INT PRIMARY KEY,
-    cliente_nombre VARCHAR(100),
-    cliente_apellido VARCHAR(100),
-    cliente_fecha_nacimiento DATE,
-    cliente_mail VARCHAR(255),
-    
-);
+USE [GD1C2024]
+GO
 
-CREATE TABLE BI_Producto (
-    id_producto INT PRIMARY KEY,
-    producto_nombre VARCHAR(100),
-    producto_descripcion VARCHAR(100),
-    producto_precio DECIMAL(10,2),
-    id_producto_categoria INT,
-    id_producto_subcategoria INT,
-    id_marca INT,
-    
-);
+CREATE SCHEMA [BI_REYES_DE_DATOS]
+GO
 
--- Creación de vistas para el modelo de BI
-CREATE VIEW BI_Venta AS
-SELECT
-    t.id_ticket,
-    t.ticket_fecha_hora,
-    c.id_cliente,
-    c.cliente_nombre,
-    c.cliente_apellido,
-    p.id_producto,
-    p.producto_nombre,
-    p.producto_precio,
-    
-FROM
-    dbo.Ticket t
-    JOIN dbo.Cliente c ON t.id_cliente = c.id_cliente
-    JOIN dbo.Item_Ticket it ON t.id_ticket = it.id_ticket
-    JOIN dbo.Producto p ON it.id_producto = p.id_producto;
-
-
--- Creación de claves primarias y foráneas en las tablas del modelo dimensional
-
--- Tabla BI_Cliente
-ALTER TABLE BI_Cliente
-ADD CONSTRAINT PK_BI_Cliente_id_cliente PRIMARY KEY (id_cliente);
-
--- Tabla BI_Producto
-ALTER TABLE BI_Producto
-ADD CONSTRAINT PK_BI_Producto_id_producto PRIMARY KEY (id_producto);
-
--- Tabla BI_Venta
-ALTER TABLE BI_Venta
-ADD CONSTRAINT PK_BI_Venta_id_venta PRIMARY KEY (id_venta),
-ADD CONSTRAINT FK_BI_Venta_id_cliente FOREIGN KEY (id_cliente) REFERENCES BI_Cliente(id_cliente),
-ADD CONSTRAINT FK_BI_Venta_id_producto FOREIGN KEY (id_producto) REFERENCES BI_Producto(id_producto);
-
-
+---------- CREACIÓN DE TABLAS-DIMENSIONES ----------
 -- Migración de datos al modelo dimensional
+/*
+Tiempo (año, cuatrimestre, mes)
+Ubicación (Provincia/Localidad)
+Sucursal
+Rango etario empleados/clientes
+< 25
+25 - 35
+35 - 50
+> 50
+Turnos
+08:00 - 12:00
+12:00 - 16:00
+16:00 - 20:00
 
+Medio de Pago
+Categoria/SubCatergoria de Productos
+*/
 -- Tabla BI_Cliente
 INSERT INTO BI_Cliente (id_cliente, cliente_dni, cliente_nombre, cliente_apellido, cliente_fecha_registro, cliente_mail, cliente_fecha_nacimiento)
 SELECT id_cliente, cliente_dni, cliente_nombre, cliente_apellido, cliente_fecha_registro, cliente_mail, cliente_fecha_nacimiento
@@ -71,9 +37,33 @@ FROM dbo.Producto;
 INSERT INTO BI_Venta (id_venta, id_cliente, id_producto, fecha_venta, cantidad_vendida, monto_total)
 SELECT id_venta, id_cliente, id_producto, fecha_venta, cantidad_vendida, monto_total
 FROM dbo.Venta;
+GO
+---------- CREACIÓN DE TABLAS-HECHOS ----------
+-- Creación de claves primarias y foráneas en las tablas del modelo dimensional
+
+-- Tabla BI_Cliente
+ALTER TABLE BI_Cliente
+ADD CONSTRAINT PK_BI_Cliente_id_cliente PRIMARY KEY (id_cliente);
+
+-- Tabla BI_Producto
+ALTER TABLE BI_Producto
+ADD CONSTRAINT PK_BI_Producto_id_producto PRIMARY KEY (id_producto);
+
+-- Tabla BI_Venta
+ALTER TABLE BI_Venta
+ADD CONSTRAINT PK_BI_Venta_id_venta PRIMARY KEY (id_venta);
+ADD CONSTRAINT FK_BI_Venta_id_cliente FOREIGN KEY (id_cliente) REFERENCES BI_Cliente(id_cliente);
+ADD CONSTRAINT FK_BI_Venta_id_producto FOREIGN KEY (id_producto) REFERENCES BI_Producto(id_producto);
+GO
+
+---------- CREACIÓN DE FUNCIONES ----------
 
 
 
+---------- CREACIÓN DE MIGRACIONES ----------
+
+
+---------- CREACION DE VIEWS ----------
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 CREATE VIEW Vista_Ticket_Promedio_Mensual AS
 SELECT
@@ -90,7 +80,7 @@ GROUP BY
     YEAR(t.ticket_fecha_hora),
     MONTH(t.ticket_fecha_hora),
     l.localidad_nombre;
-
+GO
 
 -- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
 CREATE VIEW Vista_Cantidad_Unidades_Promedio AS
@@ -106,7 +96,7 @@ GROUP BY
     YEAR(t.ticket_fecha_hora),
     (MONTH(t.ticket_fecha_hora) - 1) / 4 + 1,
     DATEPART(HOUR, t.ticket_fecha_hora);
-
+GO
 
 
 -- 3) Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
@@ -137,7 +127,7 @@ GROUP BY
     END,
     Empleado.rango_etario,
     Venta.tipo_caja;
-
+GO
 
 -- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año.
 
@@ -155,7 +145,7 @@ GROUP BY
     MONTH(v.fecha_venta),
     v.localidad,
     v.turno;
-
+GO
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
 
 	CREATE VIEW BI_Porcentaje_Descuento_Por_Mes AS
@@ -173,7 +163,7 @@ GROUP BY
 ORDER BY
     YEAR(v.fecha_venta),
     MONTH(v.fecha_venta);
-
+GO
 
 -- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
 
@@ -209,7 +199,7 @@ ORDER BY
         ELSE 'Q4'
     END,
     AVG(p.descuento) DESC;
-
+GO
 -- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
 
 CREATE VIEW BI_Porcentaje_Cumplimiento_Envios AS
@@ -227,7 +217,7 @@ GROUP BY
     YEAR(Envio.fecha_entrega_programada),
     MONTH(Envio.fecha_entrega_programada),
     Sucursal.nombre;
-
+GO
 -- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
 
 CREATE VIEW BI_Cantidad_Envios_Rango_Etario AS
@@ -253,7 +243,7 @@ GROUP BY
         WHEN MONTH(Envio.fecha_envio) BETWEEN 10 AND 12 THEN '4to Cuatrimestre'
     END,
     Cliente.rango_etario;
-
+GO
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
 
 CREATE VIEW BI_Top5_Localidades_Costo_Envio AS
@@ -267,7 +257,7 @@ GROUP BY
     Cliente.localidad
 ORDER BY
     SUM(Envio.costo_envio) DESC;
-
+GO
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
 
 CREATE VIEW BI_Top3_Sucursales_Pagos_Cuotas AS
@@ -290,7 +280,7 @@ GROUP BY
     MONTH(Venta.fecha_venta)
 ORDER BY
     SUM(Venta.monto_total) DESC;
-
+GO
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
 
 CREATE VIEW BI_Promedio_Cuota_Rango_Etario AS
@@ -314,7 +304,7 @@ GROUP BY
         WHEN Cliente.edad > 35 AND Cliente.edad <= 50 THEN '35 - 50'
         ELSE '> 50'
     END;
-
+GO
 -- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
 
 CREATE VIEW BI_Porcentaje_Descuento_Medio_Pago AS
@@ -330,3 +320,58 @@ GROUP BY
     Medio_Pago.medio_pago,
     YEAR(Venta.fecha_venta),
     DATEPART(QUARTER, Venta.fecha_venta);
+GO
+---- Ejecución de Procedures -----
+
+---- area de prueba ----
+
+
+-- Creación de nuevas tablas para el modelo de BI
+CREATE TABLE BI_Cliente (
+    id_cliente INT PRIMARY KEY,
+    cliente_nombre VARCHAR(100),
+    cliente_apellido VARCHAR(100),
+    cliente_fecha_nacimiento DATE,
+    cliente_mail VARCHAR(255),
+    
+);
+
+CREATE TABLE BI_Producto (
+    id_producto INT PRIMARY KEY,
+    producto_nombre VARCHAR(100),
+    producto_descripcion VARCHAR(100),
+    producto_precio DECIMAL(10,2),
+    id_producto_categoria INT,
+    id_producto_subcategoria INT,
+    id_marca INT,
+    
+);
+GO
+-- Creación de vistas para el modelo de BI
+CREATE VIEW BI_Venta AS
+SELECT
+    t.id_ticket,
+    t.ticket_fecha_hora,
+    c.id_cliente,
+    c.cliente_nombre,
+    c.cliente_apellido,
+    p.id_producto,
+    p.producto_nombre,
+    p.producto_precio
+    
+FROM
+    dbo.Ticket t
+    JOIN dbo.Cliente c ON t.id_cliente = c.id_cliente
+    JOIN dbo.Item_Ticket it ON t.id_ticket = it.id_ticket
+    JOIN dbo.Producto p ON it.id_producto = p.id_producto;
+
+
+
+
+
+
+
+
+
+
+
