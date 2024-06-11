@@ -1,93 +1,46 @@
-USE [GD1C2024]
+USE GD1C2024
+GO
+
+CREATE SCHEMA REYES_DE_DATOS
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'REYES_DE_DATOS')
+BEGIN EXEC ('CREATE SCHEMA REYES_DE_DATOS')
+END
 GO
 
 ------------------------------------------------------------------------------------------------
 ----- DROPEO DE TABLAS (respetar orden establecido) -----
 ------------------------------------------------------------------------------------------------
 
-if exists (SELECT 1 FROM REYES_DE_DATOS.mirar_promocion_x_producto)
-begin DROP TABLE REYES_DE_DATOS.migrar_promocion_x_producto; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_promocion_x_item_ticekt)
-begin DROP TABLE REYES_DE_DATOS.migrar_promocion_x_item_ticekt; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_ticket_x_pago)
-begin DROP TABLE REYES_DE_DATOS.migrar_ticket_x_pago; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_regla_x_promocion)
-begin DROP TABLE REYES_DE_DATOS.migrar_regla_x_promocion; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_pago)
-begin DROP TABLE REYES_DE_DATOS.migrar_pago; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_item_ticket)
-begin DROP TABLE REYES_DE_DATOS.migrar_item_ticket; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_envio)
-begin DROP TABLE REYES_DE_DATOS.migrar_envio; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_ticket)
-begin DROP TABLE REYES_DE_DATOS.migrar_ticket; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_producto)
-begin DROP TABLE REYES_DE_DATOS.migrar_producto; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_empleado)
-begin DROP TABLE REYES_DE_DATOS.migrar_empleado; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_cliente)
-begin DROP TABLE REYES_DE_DATOS.migrar_cliente; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_sucursal)
-begin DROP TABLE REYES_DE_DATOS.migrar_sucursal; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_caja)
-begin DROP TABLE REYES_DE_DATOS.migrar_caja; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_promocion)
-begin DROP TABLE REYES_DE_DATOS.migrar_promocion; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_localidad)
-begin DROP TABLE REYES_DE_DATOS.migrar_localidad; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_provincia)
-begin DROP TABLE REYES_DE_DATOS.migrar_provincia; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_tipo_comprobante)
-begin DROP TABLE REYES_DE_DATOS.migrar_tipo_comprobante; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_tipo_caja)
-begin DROP TABLE REYES_DE_DATOS.migrar_tipo_caja; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_supermercado)
-begin DROP TABLE REYES_DE_DATOS.migrar_supermercado; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_regla)
-begin DROP TABLE REYES_DE_DATOS.migrar_regla; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_descuento)
-begin DROP TABLE REYES_DE_DATOS.migrar_descuento; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_tipo_medio_pago)
-begin DROP TABLE REYES_DE_DATOS.migrar_tipo_medio_pago; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_marca)
-begin DROP TABLE REYES_DE_DATOS.migrar_marca; end
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_subcategoria)
-begin DROP TABLE REYES_DE_DATOS.migrar_subcategoria; end
-
-
-if exists (SELECT 1 FROM REYES_DE_DATOS.migrar_categoria)
-begin DROP TABLE REYES_DE_DATOS.migrar_categoria; end
+if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Regla_x_Promocion') begin DROP TABLE REYES_DE_DATOS.Regla_x_Promocion; end
+if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Promocion_X_Producto') begin DROP TABLE REYES_DE_DATOS.Promocion_X_Producto; end
+if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Promocion_X_Item_Ticket')begin DROP TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Ticket_X_Pago') begin DROP TABLE REYES_DE_DATOS.Ticket_X_Pago; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Pago') begin DROP TABLE REYES_DE_DATOS.Pago; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Item_Ticket') begin DROP TABLE REYES_DE_DATOS.Item_Ticket; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Envio') begin DROP TABLE REYES_DE_DATOS.Envio; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Ticket') begin DROP TABLE REYES_DE_DATOS.Ticket; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto') begin DROP TABLE REYES_DE_DATOS.Producto; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Empleado') begin DROP TABLE REYES_DE_DATOS.Empleado; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Cliente') begin DROP TABLE REYES_DE_DATOS.Cliente; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Sucursal') begin DROP TABLE REYES_DE_DATOS.Sucursal; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Domicilio') begin DROP TABLE REYES_DE_DATOS.Domicilio; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Caja') begin DROP TABLE REYES_DE_DATOS.Caja; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Promocion') begin DROP TABLE REYES_DE_DATOS.Promocion; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Localidad') begin DROP TABLE REYES_DE_DATOS.Localidad; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Provincia') begin DROP TABLE REYES_DE_DATOS.Provincia; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Tipo_Comprobante') begin DROP TABLE REYES_DE_DATOS.Tipo_Comprobante; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Tipo_Caja') begin DROP TABLE REYES_DE_DATOS.Tipo_Caja; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Supermercado') begin DROP TABLE REYES_DE_DATOS.Supermercado; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Regla') begin DROP TABLE REYES_DE_DATOS.Regla; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Descuento') begin DROP TABLE REYES_DE_DATOS.Descuento; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Tipo_medio_de_pago') begin DROP TABLE REYES_DE_DATOS.Tipo_medio_de_pago; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_marca') begin DROP TABLE REYES_DE_DATOS.Producto_marca; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_subcategoria')begin DROP TABLE REYES_DE_DATOS.Producto_subcategoria; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_categoria') begin DROP TABLE REYES_DE_DATOS.Producto_categoria; end
 GO
 
-CREATE SCHEMA [REYES_DE_DATOS]
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'REYES_DE_DATOS')
-	EXEC ('CREATE SCHEMA REYES_DE_DATOS');
-GO
 ------------------------------------------------------------------------------------------------
 ----- CREACIÓN DE TABLAS (respetar orden establecido) -----
 ------------------------------------------------------------------------------------------------
@@ -269,7 +222,7 @@ CREATE TABLE REYES_DE_DATOS.Item_Ticket (
 );
 --
 CREATE TABLE REYES_DE_DATOS.Pago(
-	id_pago INT, 
+	id_pago INT PRIMARY KEY, 
 	id_tipo_medio_de_pago INT,
 	id_cliente INT,
 	id_descuento INT,
@@ -485,7 +438,7 @@ CREATE PROCEDURE REYES_DE_DATOS.migrar_tipo_caja
 AS
 BEGIN
 	INSERT INTO REYES_DE_DATOS.Tipo_Caja(tipo_caja_descripcion)
-        SELECT DISTINCT m.CAJA_TIPO
+        SELECT DISTINCT CAJA_TIPO
         FROM gd_esquema.Maestra
         WHERE CAJA_TIPO IS NOT NULL
 	PRINT 'Migración de tipo de caja terminada';
@@ -541,7 +494,7 @@ CREATE PROCEDURE REYES_DE_DATOS.migrar_promocion
 AS
 BEGIN
 	INSERT INTO REYES_DE_DATOS.Promocion(
-		promo_codigo,
+		id_promo,
 		promo_descripcion,
 		promo_fecha_inicio,
 		promo_fecha_fin,
@@ -591,7 +544,7 @@ BEGIN
 		p.id_provincia
 	FROM gd_esquema.Maestra m
 		JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.SUPER_LOCALIDAD
-        JOIN REYES_DE_DATOS.Provincia d ON p.provincia_nombre = m.SUPER_PROVINCIA
+        JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.SUPER_PROVINCIA
     WHERE SUPER_DOMICILIO IS NOT NULL;
 	
 	INSERT INTO REYES_DE_DATOS.Domicilio (
@@ -605,7 +558,7 @@ BEGIN
 		p.id_provincia
     FROM gd_esquema.Maestra m
 		JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.CLIENTE_LOCALIDAD
-        JOIN REYES_DE_DATOS.Provincia d ON p.provincia_nombre = m.CLIENTE_PROVINCIA
+        JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.CLIENTE_PROVINCIA
     WHERE CLIENTE_DOMICILIO IS NOT NULL;
     PRINT 'Migracion de Domicilio terminada';
 END;
@@ -626,7 +579,6 @@ BEGIN
 	FROM gd_esquema.Maestra m
 		JOIN REYES_DE_DATOS.Domicilio d ON m.SUCURSAL_DIRECCION = d.domicilio_direccion
 		JOIN REYES_DE_DATOS.Supermercado s ON m.SUPER_CUIT = s.super_cuit 
-	JOIN REYES_DE_DATOS.Supermercado s ON m.SUPER_CUIT = s.super_cuit
 	WHERE 1 IS NOT NULL
 	PRINT 'Migración de sucursal terminada';
 END
@@ -653,7 +605,7 @@ BEGIN
 		m.CLIENTE_MAIL,
 		m.CLIENTE_FECHA_NACIMIENTO
 	FROM gd_esquema.Maestra m
-		JOIN REYES_DE_DATOS.Domicilio ON m.CLIENTE_DOMICILIO = d.domicilio_direccion
+		JOIN REYES_DE_DATOS.Domicilio d ON m.CLIENTE_DOMICILIO = d.domicilio_direccion
 	WHERE m.CLIENTE_DNI IS NOT NULL
 	ORDER BY m.CLIENTE_DNI
 	PRINT 'Migración de cliente terminada';
@@ -683,7 +635,7 @@ BEGIN
 		m.EMPLEADO_MAIL,
 		m.EMPLEADO_TELEFONO
 	FROM gd_esquema.Maestra m
-		JOIN REYES_DE_DATOS.Sucursal ON m.SUCURSAL_NOMBRE = s.sucursal_numero
+		JOIN REYES_DE_DATOS.Sucursal s ON m.SUCURSAL_NOMBRE = s.sucursal_numero
 	WHERE m.EMPLEADO_DNI IS NOT NULL
 	PRINT 'Migración de empleado terminada';
 END
@@ -708,9 +660,9 @@ BEGIN
 		m.PRODUCTO_DESCRIPCION,
 		m.PRODUCTO_PRECIO
 	FROM gd_esquema.Maestra m
-		JOIN REYES_DE_DATOS.Categoria c ON m.PRODUCTO_CATEGORIA = c.producto_categoria_detalle
-		JOIN REYES_DE_DATOS.SubCatergoria sc ON m.PRODUCTO_SUB_CATEGORIA = sc.producto_subcategoria_detalle
-		JOIN REYES_DE_DATOS.Marca mc ON m.PRODUCTO_MARCA = mc.prod_marca
+		JOIN REYES_DE_DATOS.Producto_categoria c ON m.PRODUCTO_CATEGORIA = c.producto_categoria_detalle
+		JOIN REYES_DE_DATOS.Producto_subcategoria sc ON m.PRODUCTO_SUB_CATEGORIA = sc.producto_subcategoria_detalle
+		JOIN REYES_DE_DATOS.Producto_marca mc ON m.PRODUCTO_MARCA = mc.producto_marca_detalle
 	WHERE m.PRODUCTO_NOMBRE IS NOT NULL
 	PRINT 'Migración de producto terminada';
 END
@@ -735,7 +687,7 @@ BEGIN
         m.TICKET_NUMERO,
         tc.id_tipo_comprobante,
         sc.id_sucursal,
-        caja.id_caja,
+        tcj.id_tipo_caja,
         e.id_empleado,
         m.TICKET_FECHA_HORA,
         m.TICKET_SUBTOTAL_PRODUCTOS,
@@ -744,7 +696,7 @@ BEGIN
 	FROM gd_esquema.Maestra m
 		JOIN REYES_DE_DATOS.Empleado e ON m.EMPLEADO_MAIL = e.empleado_email
 		JOIN REYES_DE_DATOS.Sucursal sc ON m.SUCURSAL_NOMBRE = sc.sucursal_numero
-        JOIN REYES_DE_DATOS.Tipo_Caja caja ON m.CAJA_NUMERO = caja.caja_numero
+        JOIN REYES_DE_DATOS.Tipo_Caja tcj ON m.CAJA_TIPO = tcj.tipo_caja_descripcion
         JOIN REYES_DE_DATOS.Tipo_Comprobante tc ON m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre
 	WHERE m.TICKET_NUMERO IS NOT NULL
 	PRINT 'Migración de Ticket terminada';
@@ -888,7 +840,7 @@ BEGIN
 	)
 	SELECT
 		m.PROMO_CODIGO,
-		id.id_item_ticket
+		it.id_item_ticket
 	FROM gd_esquema.Maestra m 
 		JOIN REYES_DE_DATOS.Item_Ticket it ON
 			m.TICKET_NUMERO = it.id_ticket
@@ -960,32 +912,31 @@ BEGIN CATCH
 END CATCH;
 
 IF (
-	EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_categoria) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_subcategoria)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_marca)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_tipo_medio_pago)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_descuento) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_regla) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_supermercado) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_tipo_caja) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_tipo_comprobante) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_provincia) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_localidad) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_promocion) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_caja) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_domicilio) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_sucursal) 
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_cliente)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_empleado)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_producto)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_ticket)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_envio)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_item_ticket)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_pago)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_regla_x_promocion)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_ticket_x_pago)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_promocion_x_item_ticekt)
-	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.migrar_promocion_x_producto)
+	EXISTS (SELECT 1 FROM REYES_DE_DATOS.Producto_categoria) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Producto_subcategoria)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Producto_marca)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Tipo_medio_de_pago)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Descuento) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Regla) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Tipo_Caja) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Tipo_Comprobante) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Provincia) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Localidad) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Caja) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Domicilio) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Sucursal) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Cliente) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Empleado)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Producto)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Ticket)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Envio)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Item_Ticket)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Pago)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Regla_x_Promocion)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Ticket_X_Pago)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion_X_Item_Ticket)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion_X_Producto)
 )
 	BEGIN
 		PRINT 'Las tablas fueron migradas correctamente.'
