@@ -697,7 +697,8 @@ INSERT INTO REYES_DE_DATOS.Ticket_X_Pago(--kk
 		and p.id_pago IS NOT NULL
 PRINT 'Migración de ticket_x_pago terminada';
 
-INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(--esta tiene que tardar mucho porque a cada item le pertenece una promocion (esto nos come 30s de ejecucion)
+--esta tiene que tardar mucho porque a cada item le pertenece una promocion (esto nos come 30s de ejecucion como minimo)
+INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(
 	id_promocion,
 	id_item_ticket
 	)
