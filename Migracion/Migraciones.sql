@@ -703,12 +703,19 @@ INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(--kk
 	id_item_ticket
 	)
 	SELECT DISTINCT
-		m.PROMO_CODIGO,
+		p.id_promo,
 		it.id_item_ticket
 	FROM gd_esquema.Maestra m 
+		JOIN REYES_DE_DATOS.Promocion p ON 
+			m.PROMOCION_DESCRIPCION = p.promo_descripcion 
+			AND m.PROMOCION_FECHA_INICIO = p.promo_fecha_inicio 
+			AND m.PROMOCION_FECHA_FIN = p.promo_fecha_fin
+		JOIN REYES_DE_DATOS.Producto pr ON 
+			m.PRODUCTO_PRECIO = pr.producto_precio 
+			AND m.PRODUCTO_NOMBRE = pr.producto_codigo
 		JOIN REYES_DE_DATOS.Item_Ticket it ON
 			m.TICKET_NUMERO = it.ticket_numero
-			AND m.PRODUCTO_NOMBRE = it.id_producto
+			AND pr.id_producto = it.id_producto
 			AND m.PROMO_CODIGO = it.id_promocion
 	WHERE 
 		m.TICKET_NUMERO IS NOT NULL
@@ -735,8 +742,7 @@ GO
 
 /*
 kk
-ticket x pago
-promo x item ticket
+Promocion_X_Item_Ticket
 */
 ------------------------------------------------------------------------------------------------
 ----- COMPROBACION PARA ROLLBACK -----
