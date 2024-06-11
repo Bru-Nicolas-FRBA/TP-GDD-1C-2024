@@ -211,11 +211,11 @@ CREATE TABLE REYES_DE_DATOS.Envio (
 ---
 CREATE TABLE REYES_DE_DATOS.Item_Ticket (
     id_item_ticket INT PRIMARY KEY IDENTITY(1,1),
-    ticket_numero INT NOT NULL,
+    ticket_numero VARCHAR(50) NOT NULL,
     id_producto INT NOT NULL,
     id_tipo_comprobante INT NOT NULL,
     id_sucursal INT NOT NULL,
-    id_promocion INT NOT NULL,
+    id_promocion INT,
     item_ticket_cantidad INT NOT NULL,
     item_ticket_precio INT NOT NULL
 );
@@ -622,7 +622,7 @@ INSERT INTO REYES_DE_DATOS.Envio(
 PRINT 'Migración de envio terminada';
 
 INSERT INTO REYES_DE_DATOS.Item_Ticket(
-	ticket_numero, --ticketunmero
+	ticket_numero,
 	id_producto,
 	id_tipo_comprobante,
 	id_sucursal,
@@ -632,7 +632,7 @@ INSERT INTO REYES_DE_DATOS.Item_Ticket(
 	)
 	SELECT DISTINCT
 		m.TICKET_NUMERO,
-		m.PRODUCTO_NOMBRE,
+		p.id_producto,
 		tc.id_tipo_comprobante,
 		s.id_sucursal,
 		m.PROMO_CODIGO,
@@ -641,6 +641,7 @@ INSERT INTO REYES_DE_DATOS.Item_Ticket(
 	FROM gd_esquema.Maestra m
 		JOIN REYES_DE_DATOS.Sucursal s ON m.SUCURSAL_DIRECCION = s.sucursal_domicilio
 		JOIN REYES_DE_DATOS.Tipo_Comprobante tc ON m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre
+		JOIN REYES_DE_DATOS.Producto p ON m.PRODUCTO_PRECIO = p.producto_precio AND m.PRODUCTO_NOMBRE = p.producto_codigo
 	WHERE m.TICKET_NUMERO IS NOT NULL
 		AND m.PRODUCTO_NOMBRE IS NOT NULL
 		AND m.TICKET_DET_CANTIDAD IS NOT NULL
