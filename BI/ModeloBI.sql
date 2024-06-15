@@ -142,7 +142,24 @@ BEGIN
 RETURN @rangoEtario
 END
 GO
+--------------------------------------------
+CREATE FUNCTION BI_REYES_DE_DATOS.cuatrimestre(@mes INT)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @cuatrimestre INT
 
+	IF(@mes BETWEEN 1 AND 4)
+	SET @cuatrimestre = 1
+	IF (@mes BETWEEN 5 AND 8)
+	SET @cuatrimestre = 2
+	IF (@mes BETWEEN 9 AND 12)
+	SET @cuatrimestre = 3
+
+ RETURN @cuatrimestre
+	
+END
+GO
 
 ---------- CREACIÓN DE MIGRACIONES ----------
 
@@ -157,7 +174,31 @@ CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_rango_etario
 	PRINT 'Migración de BI_rango_etario terminada';
 	END
 	GO
-	
+----------------
+CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_tiempo
+AS
+BEGIN
+	INSERT INTO BI_REYES_DE_DATOS.BI_tiempo(anio, cuatrimestre, mes)	
+	SELECT DISTINCT 
+		YEAR(fecha) AS anio,
+		BI_REYES_DE_DATOS.cuatrimestre(MONTH(fecha)) AS cuatrimestre
+		MONTH(fecha) AS mes
+	FROM REYES_DE_DATOS.Pago
+--ver si agregar tiempo de envio y ticket
+	PRINT 'Migración de BI_tiempo terminada';
+END
+GO
+---------------
+CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_ubicacion
+AS
+BEGIN
+	INSERT INTO BI_REYES_DE_DATOS.BI_ubicacion(id_provincia, id_localidad)
+	SELECT p.id_provincia, l.id_localidad
+	FROM REYES_DE_DATOS.Provincia p
+	CROSS JOIN REYES_DE_DATOS.Localidad l
+	PRINT 'Migración de BI_ubicación terminada'
+END
+GO
 ---------- CREACION DE VIEWS ----------
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 CREATE VIEW Vista_Ticket_Promedio_Mensual AS
