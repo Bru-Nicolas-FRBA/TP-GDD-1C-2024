@@ -56,13 +56,13 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_turno(
     turno NVARCHAR(255) NOT NULL
 );
 
--- Insertar los turnos
+-- Insertar los turnos ... esto mejor hacerlo en el procedure
 --INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00');
 --INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00');
 --INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00');
 
 ----- TABLA MEDIO DE PAGO -------
-
+--mmmmmMMMMMMM en nuestra tabla de medio de pago tenemos medio_de_pago_clasificacion y medio_de_pago_detalle.... ver de cambiar
 CREATE TABLE BI_REYES_DE_DATOS.BI_medio_de_pago(
     id_medio_de_pago INT PRIMARY KEY IDENTITY(1,1),
     costo DECIMAL(18,2) NOT NULL,
@@ -197,6 +197,46 @@ BEGIN
 	FROM REYES_DE_DATOS.Provincia p
 	CROSS JOIN REYES_DE_DATOS.Localidad l
 	PRINT 'Migración de BI_ubicación terminada'
+END
+GO
+---------------
+/*
+no sé que tanto sentido tiene migrar la sucursal que solo tiene un campo (id_sucursal) el cual es una PK que se va a ir incrementando sola
+CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_sucursal
+AS
+BEGIN
+	INSERT INTO BI_REYES_DE_DATOS.BI_sucursal
+	PRINT 'Migración de BI_sucursal terminada'
+END
+GO
+*/
+---------------
+CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_turno
+AS
+BEGIN
+	INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00')
+	INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00')
+	INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00')
+	PRINT 'Migración de BI_turno terminada'
+END
+GO
+---------------
+CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_medio_de_pago
+AS
+BEGIN
+	-- Primero hacer bien la tabla medio de pago, creo que está mal o habría que revisar
+	PRINT 'Migración de BI_medio_de_pago terminada'
+END
+GO
+--------------
+CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_categoria_producto
+AS
+BEGIN
+	INSERT INTO BI_REYES_DE_DATOS.BI_categoria_producto(categoria_producto, subcategoria_producto) -- ver si precisamos los números/id o detalles
+	SELECT c.producto_categoria_detalle, s.producto_subategoria_detalle
+	FROM REYES_DE_DATOS.Producto_categoria c
+	CROSS JOIN REYES_DE_DATOS.Producto_subcategoria s
+	PRINT 'Migración de BI_categoria_producto terminada'
 END
 GO
 ---------- CREACION DE VIEWS ----------
