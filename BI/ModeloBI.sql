@@ -1,126 +1,117 @@
+--cosas para corregir
+/*
+	Que pingoe es venta y de donde lo sacamos
+	solo se pueden mostrar cosas de la tablas de entrega y 2 hechos
+	
+	no hacer procedure solo insert into
+	hacer pruebas al final if exists
+*/
 USE [GD1C2024]
 GO
 
 CREATE SCHEMA [BI_REYES_DE_DATOS]
 GO
-
----------- CREACIÓN DE TABLAS-DIMENSIONES ----------
--- Migración de datos al modelo dimensional
-/*
-Tiempo (año, cuatrimestre, mes)
-Ubicación (Provincia/Localidad)
-Sucursal
-Rango etario empleados/clientes
-< 25
-25 - 35
-35 - 50
-> 50
-Turnos
-08:00 - 12:00
-12:00 - 16:00
-16:00 - 20:00
-
-Medio de Pago
-Categoria/SubCatergoria de Productos
-*/
-	----- TABLA TIEMPO -------
+----- ----- ----- ----- ----- ----- ----- ----- 
+----- CREACIÓN DE TABLAS-DIMENSIONES ----- 
+----- ----- ----- ----- ----- ----- ----- ----- 
 CREATE TABLE BI_REYES_DE_DATOS.BI_Tiempo(
 	id_tiempo INT PRIMARY KEY IDENTITY(1,1),
 	anio INT NOT NULL, 
 	cuatrimestre INT NOT NULL,
 	mes INT NOT NULL
 );
-
-	----- TABLA UBICACION -------
+-----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Ubicacion(
 	id_ubicacion INT PRIMARY KEY IDENTITY(1,1),
 	id_provincia INT NOT NULL,
 	id_localidad INT NOT NULL
 );
-
-	----- TABLA SUCURSAL -------
+-----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Sucursal(
 	id_sucursal INT PRIMARY KEY IDENTITY(1,1)
 );
-
-	----- TABLA RANGO ETARIO -------
+-----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Rango_Etario(
 	id_rango_etario INT PRIMARY KEY,
 	rango_etario NVARCHAR(255) NOT NULL
 );
-
-
-	----- TABLA TURNOS -------
+-----
 CREATE TABLE BI_REYES_DE_DATOS.BI_turno(
     id_turno INT PRIMARY KEY IDENTITY(1,1),
     turno NVARCHAR(255) NOT NULL
 );
-
--- Insertar los turnos ... esto mejor hacerlo en el procedure
---INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00');
---INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00');
---INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00');
-
------ TABLA MEDIO DE PAGO -------
+-----
 --mmmmmMMMMMMM en nuestra tabla de medio de pago tenemos medio_de_pago_clasificacion y medio_de_pago_detalle.... ver de cambiar
 CREATE TABLE BI_REYES_DE_DATOS.BI_medio_de_pago(
     id_medio_de_pago INT PRIMARY KEY IDENTITY(1,1),
     costo DECIMAL(18,2) NOT NULL,
     medio_de_pago NVARCHAR(255) NOT NULL
 );
-
------ TABLA CATEGORIA Y SUBCATEGORIA -------
-
+----- ----- ----- ----- ----- ----- 
+----- TABLAS ADICIONALES -----
+----- ----- ----- ----- ----- -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_categoria_producto(
     id_categoria_producto INT PRIMARY KEY IDENTITY(1,1),
     categoria_producto NVARCHAR(255) NOT NULL,
     subcategoria_producto NVARCHAR(255) NULL -- NULL es para categorías que no tienen subcategoría
 );
-
--- Tabla BI_Cliente
-INSERT INTO BI_Cliente (id_cliente, cliente_dni, cliente_nombre, cliente_apellido, cliente_fecha_registro, cliente_mail, cliente_fecha_nacimiento)
-SELECT id_cliente, cliente_dni, cliente_nombre, cliente_apellido, cliente_fecha_registro, cliente_mail, cliente_fecha_nacimiento
-FROM dbo.Cliente;
-
--- Tabla BI_Producto
-INSERT INTO BI_Producto (id_producto, producto_nombre, producto_descripcion, producto_precio)
-SELECT id_producto, producto_nombre, producto_descripcion, producto_precio
-FROM dbo.Producto;
-
--- Tabla BI_Venta
-INSERT INTO BI_Venta (id_venta, id_cliente, id_producto, fecha_venta, cantidad_vendida, monto_total)
-SELECT id_venta, id_cliente, id_producto, fecha_venta, cantidad_vendida, monto_total
-FROM dbo.Venta;
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_Cliente (
+    id_cliente INT PRIMARY KEY,
+    cliente_nombre VARCHAR(100),
+    cliente_apellido VARCHAR(100),
+    cliente_fecha_nacimiento DATE,
+    cliente_mail VARCHAR(255),
+    
+);
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_Producto (
+    id_producto INT PRIMARY KEY,
+    producto_nombre VARCHAR(100),
+    producto_descripcion VARCHAR(100),
+    producto_precio DECIMAL(10,2),
+    id_producto_categoria INT,
+    id_producto_subcategoria INT,
+    id_marca INT,
+    
+);
+-----
+/*
+	--kk ke es esto
+	CREATE VIEW BI_Venta AS
+	SELECT
+		t.id_ticket,
+		t.ticket_fecha_hora,
+		c.id_cliente,
+		c.cliente_nombre,
+		c.cliente_apellido,
+		p.id_producto,
+		p.producto_nombre,
+		p.producto_precio
+    
+	FROM
+		dbo.Ticket t
+		JOIN dbo.Cliente c ON t.id_cliente = c.id_cliente
+		JOIN dbo.Item_Ticket it ON t.id_ticket = it.id_ticket
+		JOIN dbo.Producto p ON it.id_producto = p.id_producto;
+*/
 GO
----------- CREACIÓN DE TABLAS-HECHOS ----------
--- Creación de claves primarias y foráneas en las tablas del modelo dimensional
-
--- Tabla BI_Cliente
-ALTER TABLE BI_Cliente
-ADD CONSTRAINT PK_BI_Cliente_id_cliente PRIMARY KEY (id_cliente);
-
--- Tabla BI_Producto
-ALTER TABLE BI_Producto
-ADD CONSTRAINT PK_BI_Producto_id_producto PRIMARY KEY (id_producto);
-
+----- ----- ----- ----- ----- ----- -----
+-----  CREACIÓN DE TABLAS-HECHOS ----- 
+----- ----- ----- ----- ----- ----- -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_ventas(
 	id_venta INT PRIMARY KEY IDENTITY(1,1),
-	-- ver tabla Ventas ,
 	id_tiempo INT FOREIGN KEY REFERENCES BI_REYES_DE_DATOS.BI_Tiempo(id_tiempo) NOT NULL,
-	--ver que más
-	
-	
 );
-GO
 
--- Tabla BI_Venta
-ALTER TABLE BI_Venta
-ADD CONSTRAINT PK_BI_Venta_id_venta PRIMARY KEY (id_venta);
-ADD CONSTRAINT FK_BI_Venta_id_cliente FOREIGN KEY (id_cliente) REFERENCES BI_Cliente(id_cliente);
-ADD CONSTRAINT FK_BI_Venta_id_producto FOREIGN KEY (id_producto) REFERENCES BI_Producto(id_producto);
 GO
-
----------- CREACIÓN DE FUNCIONES ----------
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_ventas ADD CONSTRAINT PK_BI_Venta_id_venta PRIMARY KEY (id_venta)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_ventas ADD CONSTRAINT FK_BI_Venta_id_cliente FOREIGN KEY (id_cliente) REFERENCES BI_Cliente(id_cliente)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_ventas ADD CONSTRAINT FK_BI_Venta_id_producto FOREIGN KEY (id_producto) REFERENCES BI_Producto(id_producto)
+GO
+----- ----- ----- ----- ----- ----
+-----  CREACIÓN DE FUNCIONES -----
+----- ----- ----- ----- ----- ----- 
 
 CREATE FUNCTION BI_REYES_DE_DATOS.rangoEtario(@fechaNacimiento AS DATE)
 RETURNS INT
@@ -142,7 +133,7 @@ BEGIN
 RETURN @rangoEtario
 END
 GO
---------------------------------------------
+----- 
 CREATE FUNCTION BI_REYES_DE_DATOS.cuatrimestre(@mes INT)
 RETURNS INT
 AS
@@ -160,87 +151,119 @@ BEGIN
 	
 END
 GO
-
----------- CREACIÓN DE MIGRACIONES ----------
-
-CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_rango_etario
-	AS
-	BEGIN 
-	INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (1, '<25')
-	INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (2, '25-34')
-	INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (3, '35-50')
-	INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (4, '<50')
-
-	PRINT 'Migración de BI_rango_etario terminada';
-	END
-	GO
-----------------
-CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_tiempo
-AS
-BEGIN
-	INSERT INTO BI_REYES_DE_DATOS.BI_tiempo(anio, cuatrimestre, mes)	
-	SELECT DISTINCT 
-		YEAR(fecha) AS anio,
-		BI_REYES_DE_DATOS.cuatrimestre(MONTH(fecha)) AS cuatrimestre
-		MONTH(fecha) AS mes
-	FROM REYES_DE_DATOS.Pago
---ver si agregar tiempo de envio y ticket
-	PRINT 'Migración de BI_tiempo terminada';
-END
-GO
----------------
-CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_ubicacion
-AS
-BEGIN
-	INSERT INTO BI_REYES_DE_DATOS.BI_ubicacion(id_provincia, id_localidad)
-	SELECT p.id_provincia, l.id_localidad
-	FROM REYES_DE_DATOS.Provincia p
+----- ----- ----- ----- ----- ----- 
+-----  CREACIÓN DE MIGRACIONES -----
+----- ----- ----- ----- ----- ----- 
+----- 
+INSERT INTO BI_REYES_DE_DATOS.BI_Cliente(
+	id_cliente,
+	--cliente_dni,
+	cliente_nombre,
+	cliente_apellido,
+	--cliente_fecha_registro,
+	cliente_mail,
+	cliente_fecha_nacimiento)
+SELECT
+	id_cliente,
+	cliente_dni,
+	cliente_nombre,
+	cliente_apellido,
+	cliente_fecha_registro,
+	cliente_mail,
+	cliente_fecha_nacimiento
+FROM REYES_DE_DATOS.Cliente;
+----- 
+INSERT INTO BI_REYES_DE_DATOS.BI_Producto(
+	id_producto,
+	producto_nombre,
+	producto_descripcion,
+	producto_precio
+)
+SELECT 
+	id_producto,
+	producto_descripcion,
+	producto_precio
+FROM REYES_DE_DATOS.Producto;
+----- 
+INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
+	id_venta,
+	id_cliente,
+	id_producto,
+	fecha_venta,
+	cantidad_vendida,
+	monto_total
+)
+SELECT 
+	id_venta, 
+	id_cliente,
+	id_producto,
+	fecha_venta,
+	cantidad_vendida,
+	monto_total
+FROM BI_REYES_DE_DATOS.Venta;
+-----
+INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (1, '<25')
+INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (2, '25-34')
+INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (3, '35-50')
+INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (4, '<50')
+PRINT 'Migración de BI_rango_etario terminada';
+----- 
+INSERT INTO BI_REYES_DE_DATOS.BI_tiempo(
+	anio,
+	cuatrimestre,
+	mes
+)	
+SELECT DISTINCT 
+	YEAR(fecha),
+	BI_REYES_DE_DATOS.cuatrimestre(MONTH(fecha)),
+	MONTH(fecha)
+	--ver si agregar tiempo de envio y ticket
+FROM REYES_DE_DATOS.Pago
+PRINT 'Migración de BI_tiempo terminada';
+----- 
+INSERT INTO BI_REYES_DE_DATOS.BI_ubicacion(
+	id_provincia,
+	id_localidad
+)
+SELECT 
+	p.id_provincia, 
+	l.id_localidad
+FROM REYES_DE_DATOS.Provincia p
 	CROSS JOIN REYES_DE_DATOS.Localidad l
-	PRINT 'Migración de BI_ubicación terminada'
-END
-GO
----------------
-/*
-no sé que tanto sentido tiene migrar la sucursal que solo tiene un campo (id_sucursal) el cual es una PK que se va a ir incrementando sola
-CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_sucursal
-AS
-BEGIN
-	INSERT INTO BI_REYES_DE_DATOS.BI_sucursal
-	PRINT 'Migración de BI_sucursal terminada'
-END
-GO
-*/
----------------
-CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_turno
-AS
-BEGIN
-	INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00')
-	INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00')
-	INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00')
-	PRINT 'Migración de BI_turno terminada'
-END
-GO
----------------
-CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_medio_de_pago
-AS
-BEGIN
-	-- Primero hacer bien la tabla medio de pago, creo que está mal o habría que revisar
-	PRINT 'Migración de BI_medio_de_pago terminada'
-END
-GO
---------------
-CREATE PROCEDURE BI_REYES_DE_DATOS.migrar_BI_categoria_producto
-AS
-BEGIN
-	INSERT INTO BI_REYES_DE_DATOS.BI_categoria_producto(categoria_producto, subcategoria_producto) -- ver si precisamos los números/id o detalles
-	SELECT c.producto_categoria_detalle, s.producto_subategoria_detalle
-	FROM REYES_DE_DATOS.Producto_categoria c
+PRINT 'Migración de BI_ubicación terminada'
+----- 
+--no sé que tanto sentido tiene migrar la sucursal que solo tiene un campo (id_sucursal) el cual es una PK que se va a ir incrementando sola
+--INSERT INTO BI_REYES_DE_DATOS.BI_sucursal
+PRINT 'Migración de BI_sucursal terminada'
+----- 
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00')
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00')
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00')
+PRINT 'Migración de BI_turno terminada'
+----- 
+-- Primero hacer bien la tabla medio de pago, creo que está mal o habría que revisar
+PRINT 'Migración de BI_medio_de_pago terminada'
+----- 
+INSERT INTO BI_REYES_DE_DATOS.BI_categoria_producto(
+	categoria_producto,
+	subcategoria_producto
+	-- ver si precisamos los números/id o detalles
+) 
+SELECT
+	c.producto_categoria_detalle,
+	s.producto_subategoria_detalle
+FROM REYES_DE_DATOS.Producto_categoria c
 	CROSS JOIN REYES_DE_DATOS.Producto_subcategoria s
-	PRINT 'Migración de BI_categoria_producto terminada'
-END
+PRINT 'Migración de BI_categoria_producto terminada'
 GO
----------- CREACION DE VIEWS ----------
+
+----- ----- ----- ----- ----- 
+----- CREACION DE VIEWS ----- 
+----- ----- ----- ----- ----- 
+
+----- 
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
+----- 
 CREATE VIEW Vista_Ticket_Promedio_Mensual AS
 SELECT
     YEAR(t.ticket_fecha_hora) AS anio,
@@ -248,7 +271,8 @@ SELECT
     l.localidad_nombre,
     AVG(it.item_precio_total) AS ticket_promedio
 FROM
-    Ticket t
+    --kk de aca solo se usa hechos
+	Ticket t
     JOIN Cliente c ON t.id_cliente = c.id_cliente
     JOIN Localidad l ON c.id_localidad = l.id_localidad
     JOIN Item_Ticket it ON t.id_ticket = it.id_ticket
@@ -257,8 +281,9 @@ GROUP BY
     MONTH(t.ticket_fecha_hora),
     l.localidad_nombre;
 GO
-
+----- 
 -- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
+----- 
 CREATE VIEW Vista_Cantidad_Unidades_Promedio AS
 SELECT
     YEAR(t.ticket_fecha_hora) AS anio,
@@ -273,10 +298,9 @@ GROUP BY
     (MONTH(t.ticket_fecha_hora) - 1) / 4 + 1,
     DATEPART(HOUR, t.ticket_fecha_hora);
 GO
-
-
+----- 
 -- 3) Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
-
+----- 
 CREATE VIEW BI_Porcentaje_Ventas_Rango_Etario AS
 SELECT
     YEAR(Venta.fecha_venta) AS anio,
@@ -304,10 +328,10 @@ GROUP BY
     Empleado.rango_etario,
     Venta.tipo_caja;
 GO
-
--- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año.
-
-	CREATE VIEW Vista_Cantidad_Ventas_Por_Turno_Y_Localidad AS
+----- 
+-- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año
+----- .
+CREATE VIEW Vista_Cantidad_Ventas_Por_Turno_Y_Localidad AS
 SELECT
     YEAR(v.fecha_venta) AS anio,
     MONTH(v.fecha_venta) AS mes,
@@ -322,9 +346,10 @@ GROUP BY
     v.localidad,
     v.turno;
 GO
+----- 
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
-
-	CREATE VIEW BI_Porcentaje_Descuento_Por_Mes AS
+----- 
+CREATE VIEW BI_Porcentaje_Descuento_Por_Mes AS
 SELECT
     YEAR(v.fecha_venta) AS anio,
     MONTH(v.fecha_venta) AS mes,
@@ -340,10 +365,10 @@ ORDER BY
     YEAR(v.fecha_venta),
     MONTH(v.fecha_venta);
 GO
-
+----- 
 -- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
-
-	CREATE VIEW Vista_Categorias_Productos_Con_Mayor_Descuento AS
+----- 
+CREATE VIEW Vista_Categorias_Productos_Con_Mayor_Descuento AS
 SELECT
     YEAR(p.fecha_inicio) AS anio,
     CASE
@@ -376,8 +401,9 @@ ORDER BY
     END,
     AVG(p.descuento) DESC;
 GO
+----- 
 -- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
-
+----- 
 CREATE VIEW BI_Porcentaje_Cumplimiento_Envios AS
 SELECT
     YEAR(Envio.fecha_entrega_programada) AS anio,
@@ -394,8 +420,9 @@ GROUP BY
     MONTH(Envio.fecha_entrega_programada),
     Sucursal.nombre;
 GO
+----- 
 -- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
-
+----- 
 CREATE VIEW BI_Cantidad_Envios_Rango_Etario AS
 SELECT
     YEAR(Envio.fecha_envio) AS anio,
@@ -420,8 +447,9 @@ GROUP BY
     END,
     Cliente.rango_etario;
 GO
+----- 
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
-
+----- 
 CREATE VIEW BI_Top5_Localidades_Costo_Envio AS
 SELECT TOP 5
     Cliente.localidad AS nombre_localidad,
@@ -434,8 +462,9 @@ GROUP BY
 ORDER BY
     SUM(Envio.costo_envio) DESC;
 GO
+----- 
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
-
+----- 
 CREATE VIEW BI_Top3_Sucursales_Pagos_Cuotas AS
 SELECT TOP 3
     Sucursal.nombre AS nombre_sucursal,
@@ -457,8 +486,9 @@ GROUP BY
 ORDER BY
     SUM(Venta.monto_total) DESC;
 GO
+----- 
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
-
+----- 
 CREATE VIEW BI_Promedio_Cuota_Rango_Etario AS
 SELECT
     CASE
@@ -481,8 +511,9 @@ GROUP BY
         ELSE '> 50'
     END;
 GO
+----- 
 -- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
-
+----- 
 CREATE VIEW BI_Porcentaje_Descuento_Medio_Pago AS
 SELECT
     Medio_Pago.medio_pago,
@@ -497,46 +528,3 @@ GROUP BY
     YEAR(Venta.fecha_venta),
     DATEPART(QUARTER, Venta.fecha_venta);
 GO
----- Ejecución de Procedures -----
-
----- area de prueba ----
-
-
--- Creación de nuevas tablas para el modelo de BI
-CREATE TABLE BI_Cliente (
-    id_cliente INT PRIMARY KEY,
-    cliente_nombre VARCHAR(100),
-    cliente_apellido VARCHAR(100),
-    cliente_fecha_nacimiento DATE,
-    cliente_mail VARCHAR(255),
-    
-);
-
-CREATE TABLE BI_Producto (
-    id_producto INT PRIMARY KEY,
-    producto_nombre VARCHAR(100),
-    producto_descripcion VARCHAR(100),
-    producto_precio DECIMAL(10,2),
-    id_producto_categoria INT,
-    id_producto_subcategoria INT,
-    id_marca INT,
-    
-);
-GO
--- Creación de vistas para el modelo de BI
-CREATE VIEW BI_Venta AS
-SELECT
-    t.id_ticket,
-    t.ticket_fecha_hora,
-    c.id_cliente,
-    c.cliente_nombre,
-    c.cliente_apellido,
-    p.id_producto,
-    p.producto_nombre,
-    p.producto_precio
-    
-FROM
-    dbo.Ticket t
-    JOIN dbo.Cliente c ON t.id_cliente = c.id_cliente
-    JOIN dbo.Item_Ticket it ON t.id_ticket = it.id_ticket
-    JOIN dbo.Producto p ON it.id_producto = p.id_producto;
