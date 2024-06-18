@@ -28,7 +28,10 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Ubicacion(
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Sucursal(
-	id_sucursal INT PRIMARY KEY IDENTITY(1,1)
+	id_sucursal INT PRIMARY KEY IDENTITY(1,1),
+	sucursal_id_supermercado INT NOT NULL,
+    sucursal_domicilio VARCHAR(100) NOT NULL,
+    sucursal_numero VARCHAR(50) NOT NULL -- solo el numero
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Rango_Etario(
@@ -41,74 +44,137 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_turno(
     turno NVARCHAR(255) NOT NULL
 );
 -----
---mmmmmMMMMMMM en nuestra tabla de medio de pago tenemos medio_de_pago_clasificacion y medio_de_pago_detalle.... ver de cambiar
 CREATE TABLE BI_REYES_DE_DATOS.BI_medio_de_pago(
     id_medio_de_pago INT PRIMARY KEY IDENTITY(1,1),
-    costo DECIMAL(18,2) NOT NULL,
-    medio_de_pago NVARCHAR(255) NOT NULL
+	medio_de_pago_clasificacion VARCHAR(100) NOT NULL, -- credito / debito / efectivo / etc
+	medio_de_pago_detalle VARCHAR(100) NOT NULL,
+);
+CREATE TABLE BI_REYES_DE_DATOS.BI_Producto_categoria (
+	id_producto_categoria INT PRIMARY KEY IDENTITY(1,1),
+	producto_categoria_detalle VARCHAR(50) NOT NULL,
+);
+---
+CREATE TABLE BI_REYES_DE_DATOS.BI_Producto_subcategoria (
+	id_producto_subcategoria INT PRIMARY KEY IDENTITY(1,1),
+	producto_subcategoria_detalle VARCHAR(50) NOT NULL,
 );
 ----- ----- ----- ----- ----- ----- 
 ----- TABLAS ADICIONALES -----
 ----- ----- ----- ----- ----- -----
-CREATE TABLE BI_REYES_DE_DATOS.BI_categoria_producto(
-    id_categoria_producto INT PRIMARY KEY IDENTITY(1,1),
-    categoria_producto NVARCHAR(255) NOT NULL,
-    subcategoria_producto NVARCHAR(255) NULL -- NULL es para categorías que no tienen subcategoría
-);
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Cliente (
     id_cliente INT PRIMARY KEY,
     cliente_nombre VARCHAR(100),
-    cliente_apellido VARCHAR(100),
-    cliente_fecha_nacimiento DATE,
-    cliente_mail VARCHAR(255),
-    
+    cliente_apellido VARCHAR(100)    
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Producto (
     id_producto INT PRIMARY KEY,
     producto_nombre VARCHAR(100),
-    producto_descripcion VARCHAR(100),
     producto_precio DECIMAL(10,2),
     id_producto_categoria INT,
-    id_producto_subcategoria INT,
-    id_marca INT,
-    
+    id_producto_subcategoria INT,    
 );
 -----
-/*
-	--kk ke es esto
-	CREATE VIEW BI_Venta AS
-	SELECT
-		t.id_ticket,
-		t.ticket_fecha_hora,
-		c.id_cliente,
-		c.cliente_nombre,
-		c.cliente_apellido,
-		p.id_producto,
-		p.producto_nombre,
-		p.producto_precio
-    
-	FROM
-		dbo.Ticket t
-		JOIN dbo.Cliente c ON t.id_cliente = c.id_cliente
-		JOIN dbo.Item_Ticket it ON t.id_ticket = it.id_ticket
-		JOIN dbo.Producto p ON it.id_producto = p.id_producto;
-*/
-GO
+CREATE TABLE BI_REYES_DE_DATOS.BI_Envio (
+    id_envio INT PRIMARY KEY IDENTITY(1,1),
+    id_ticket INT NOT NULL,
+    id_cliente INT NOT NULL,
+    envio_fecha_programada DATETIME NULL,
+    --envio_horario_inicio INT NOT NULL,
+    --envio_horario_fin INT NOT NULL,
+    envio_fecha_entrega DATETIME NOT NULL,
+    --envio_estado VARCHAR(50) NOT NULL,
+    envio_costo DECIMAL(10, 2) NOT NULL,
+);
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_Promocion(
+	id_promo INT PRIMARY KEY NOT NULL,
+	promo_descripcion VARCHAR(50) NOT NULL,
+	--promo_fecha_inicio DATETIME NOT NULL,
+	--promo_fecha_fin DATETIME NOT NULL,
+);
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_Caja(
+	id_caja INT PRIMARY KEY IDENTITY(1,1),
+	caja_numero INT NOT NULL,
+	caja_tipo VARCHAR(30) NOT NULL, 
+);
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_Descuento (
+	descuento_codigo INT PRIMARY KEY NOT NULL,
+	descuento_descripcion VARCHAR(100) NOT NULL,
+	descuento_fecha_inicio DATE NOT NULL,
+	descuento_fecha_fin DATE NOT NULL,
+	descuento_valor_porcentual_a_aplicar DECIMAL(5, 2) NOT NULL,
+	descuento_tope DECIMAL(10, 2) NOT NULL,
+);
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_Empleado (
+    id_empleado INT PRIMARY KEY IDENTITY(1,1),
+    id_sucursal INT NOT NULL,
+    empleado_nombre VARCHAR(15) NOT NULL,
+    empleado_apellido VARCHAR(30) NOT NULL,
+    --empleado_dni INT NOT NULL,
+    empleado_fecha_registro DATE,
+    --empleado_fecha_nacimiento DATE,
+    --empleado_email VARCHAR(30) NOT NULL,
+    --empleado_telefono DECIMAL(8, 0) NOT NULL
+);
+-----
+/*Item Ticket*/
+CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket (
+    id_item_ticket INT PRIMARY KEY IDENTITY(1,1),
+    ticket_numero VARCHAR(50) NOT NULL,
+    id_sucursal INT NOT NULL,
+    id_tipo_comprobante INT NOT NULL,
+    id_producto INT NOT NULL,
+    id_promocion INT,
+    item_ticket_cantidad INT NOT NULL,
+    item_ticket_precio INT NOT NULL
+);
+-----
+/*Ticket*/
+CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
+    id_ticket INT PRIMARY KEY IDENTITY(1,1),
+	ticket_numero INT NOT NULL, -- TICKET_NUMERO
+    id_tipo_comprobante INT NOT NULL,
+    id_sucursal INT NOT NULL,
+    id_caja INT NOT NULL,
+    id_empleado INT NOT NULL,
+    ticket_fecha_hora DATE NOT NULL,
+    ticket_subtotal DECIMAL(10, 2) NOT NULL,
+    ticket_total DECIMAL(10, 2) NOT NULL,
+    ticket_total_descuento_aplicado INT NOT NULL,
+	ticket_total_descuento_aplicado_mp INT NOT NULL,
+    ticket_monto_total_envio INT NOT NULL
+);
+------------------------------------------------------------------------------------------------
+----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
+------------------------------------------------------------------------------------------------
+ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES BI_REYES_DE_DATOS.BI_Producto(id_producto)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_tipo_comprobante FOREIGN KEY (id_tipo_comprobante) REFERENCES BI_REYES_DE_DATOS.BI_Tipo_Comprobante(id_tipo_comprobante)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_promocion FOREIGN KEY (id_promocion) REFERENCES BI_REYES_DE_DATOS.BI_Promocion(id_promo)
+
+ALTER TABLE BI_REYES_DE_DATOS.BI_Envio ADD CONSTRAINT FK_id_cliente_envio FOREIGN KEY (id_cliente) REFERENCES BI_REYES_DE_DATOS.BI_Cliente(id_cliente)
+
+ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_tipo_comprobante_ticket FOREIGN KEY (id_tipo_comprobante) REFERENCES BI_REYES_DE_DATOS.BI_Tipo_Comprobante(id_tipo_comprobante)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_sucursal_ticket FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_caja_ticket FOREIGN KEY (id_caja) REFERENCES BI_REYES_DE_DATOS.BI_Caja(id_caja)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_empleado_ticket FOREIGN KEY (id_empleado) REFERENCES BI_REYES_DE_DATOS.BI_Empleado(id_empleado)
+
+ALTER TABLE BI_REYES_DE_DATOS.BI_Producto ADD CONSTRAINT FK_id_producto_categoria FOREIGN KEY (id_producto_categoria) REFERENCES BI_REYES_DE_DATOS.BI_Producto_categoria(id_producto_categoria)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Producto ADD CONSTRAINT FK_id_producto_subcategoria FOREIGN KEY (id_producto_subcategoria) REFERENCES BI_REYES_DE_DATOS.BI_Producto_subcategoria(id_producto_subcategoria)
+
+ALTER TABLE BI_REYES_DE_DATOS.BI_Empleado ADD CONSTRAINT FK_id_sucursal_empleado FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+
+ALTER TABLE BI_REYES_DE_DATOS.BI_Cliente ADD CONSTRAINT FK_cliente_id_domicilio FOREIGN KEY (cliente_id_domicilio) REFERENCES BI_REYES_DE_DATOS.BI_Domicilio(id_domicilio)
+
 ----- ----- ----- ----- ----- ----- -----
 -----  CREACIÓN DE TABLAS-HECHOS ----- 
 ----- ----- ----- ----- ----- ----- -----
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_ventas(
-	id_venta INT PRIMARY KEY IDENTITY(1,1),
-	id_tiempo INT FOREIGN KEY REFERENCES BI_REYES_DE_DATOS.BI_Tiempo(id_tiempo) NOT NULL,
-);
-
-GO
-ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_ventas ADD CONSTRAINT PK_BI_Venta_id_venta PRIMARY KEY (id_venta)
-ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_ventas ADD CONSTRAINT FK_BI_Venta_id_cliente FOREIGN KEY (id_cliente) REFERENCES BI_Cliente(id_cliente)
-ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_ventas ADD CONSTRAINT FK_BI_Venta_id_producto FOREIGN KEY (id_producto) REFERENCES BI_Producto(id_producto)
-GO
+/*ver que combinacion se repite ej: ventas-tiempo yqs tengo suenio la concha de tu madre*/
 ----- ----- ----- ----- ----- ----
 -----  CREACIÓN DE FUNCIONES -----
 ----- ----- ----- ----- ----- ----- 
