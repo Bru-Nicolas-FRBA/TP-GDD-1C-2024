@@ -74,7 +74,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Descuento (
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Cliente (
-    id_cliente INT PRIMARY KEY,
+    id_cliente INT PRIMARY KEY IDENTITY(1,1),
     cliente_nombre VARCHAR(100),
     cliente_apellido VARCHAR(100)    
 );
@@ -92,11 +92,13 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Empleado (
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Producto (
-    id_producto INT PRIMARY KEY,
-    producto_nombre VARCHAR(100),
-    producto_precio DECIMAL(10,2),
-    id_producto_categoria INT,
-    id_producto_subcategoria INT,    
+    id_producto INT PRIMARY KEY IDENTITY(1,1),
+	producto_codigo NVARCHAR(100) NOT NULL, -- PRODUCTO_NOMBRE
+    id_producto_categoria INT NOT NULL,
+    id_producto_subcategoria INT NOT NULL,
+    --id_marca INT NOT NULL,
+    --producto_descripcion NVARCHAR(100) NOT NULL,
+    producto_precio DECIMAL(10, 2) NOT NULL   
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Promocion(
@@ -344,70 +346,54 @@ FROM REYES_DE_DATOS.Caja
 PRINT 'Migración de BI_Caja terminada'
 GO
 ------------------------------------------------------------ Descuento
-CREATE TABLE BI_REYES_DE_DATOS.BI_Descuento (
-	descuento_codigo INT PRIMARY KEY NOT NULL,
-	descuento_descripcion VARCHAR(100) NOT NULL,
-	descuento_fecha_inicio DATE NOT NULL,
-	descuento_fecha_fin DATE NOT NULL,
-	descuento_valor_porcentual_a_aplicar DECIMAL(5, 2) NOT NULL,
-	descuento_tope DECIMAL(10, 2) NOT NULL,
-);
+INSERT INTO BI_REYES_DE_DATOS.BI_Descuento (
+	descuento_codigo,
+	descuento_descripcion,
+	descuento_fecha_inicio,
+	descuento_fecha_fin,
+	descuento_valor_porcentual_a_aplicar,
+	descuento_tope
+)
+SELECT
+	descuento_codigo,
+	descuento_descripcion,
+	descuento_fecha_inicio,
+	descuento_fecha_fin,
+	descuento_valor_porcentual_a_aplicar,
+	descuento_tope
+FROM REYES_DE_DATOS.Descuento
+PRINT 'Migración de BI_Descuento terminada'
+GO
 ------------------------------------------------------------ Cliente
 INSERT INTO BI_REYES_DE_DATOS.BI_Cliente(
-	cliente_dni,
-	cliente_nombre,
-	cliente_apellido,
-	cliente_fecha_registro,
-	cliente_mail,
-	cliente_fecha_nacimiento
-	)
+    cliente_nombre,
+    cliente_apellido  
+)
 SELECT
-	cliente_dni,
 	cliente_nombre,
-	cliente_apellido,
-	cliente_fecha_registro,
-	cliente_mail,
-	cliente_fecha_nacimiento
+    cliente_apellido
 FROM REYES_DE_DATOS.Cliente;
-
+PRINT 'Migración de BI_Cliente terminada'
+GO
 ------------------------------------------------------------ Producto
 INSERT INTO BI_REYES_DE_DATOS.BI_Producto(
-	id_producto,
-	producto_nombre,
-	producto_descripcion,
-	producto_precio
+	producto_codigo, -- PRODUCTO_NOMBRE
+    id_producto_categoria,
+    id_producto_subcategoria,
+    --id_marca INT NOT NULL,
+    --producto_descripcion,
+    producto_precio
 )
 SELECT 
-	id_producto,
-	producto_descripcion,
-	producto_precio
+	producto_codigo,
+    id_producto_categoria,
+    id_producto_subcategoria,
+    --id_marca,
+    --producto_descripcion,
+    producto_precio
 FROM REYES_DE_DATOS.Producto;
------------------------------------------------------------- Ticket / Venta -- TITO
-INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
-	venta_numero,
-	venta_id_tipo_comprobante,
-    venta_id_sucursal,
-    venta_id_caja,
-    venta_id_empleado,
-    sticket_fecha_hora,
-    venta_total
-    --ticket_total_descuento_aplicado,
-	--ticket_total_descuento_aplicado_mp,
-    --ticket_monto_total_envio
-)
-SELECT 
-	ticket_numero, -- TICKET_NUMERO
-    id_tipo_comprobante,
-    id_sucursal,
-    id_caja,
-    id_empleado,
-    ticket_fecha_hora,
-    ticket_subtotal,
-    ticket_total,
-    --ticket_total_descuento_aplicado,
-	--ticket_total_descuento_aplicado_mp,
-    --ticket_monto_total_envio
-FROM REYES_DE_DATOS.Ticket;
+PRINT 'Migración de BI_Producto terminada'
+GO
 ------------------------------------------------------------ Envio
 CREATE TABLE BI_REYES_DE_DATOS.BI_Envio (
     id_envio INT PRIMARY KEY IDENTITY(1,1),
@@ -451,6 +437,33 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket (
     item_ticket_precio INT NOT NULL
 );
 GO
+------------------------------------------------------------ Ticket / Venta -- TITO
+INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
+	venta_numero,
+	venta_id_tipo_comprobante,
+    venta_id_sucursal,
+    venta_id_caja,
+    venta_id_empleado,
+    sticket_fecha_hora,
+    venta_total
+    --ticket_total_descuento_aplicado,
+	--ticket_total_descuento_aplicado_mp,
+    --ticket_monto_total_envio
+)
+SELECT 
+	ticket_numero, -- TICKET_NUMERO
+    id_tipo_comprobante,
+    id_sucursal,
+    id_caja,
+    id_empleado,
+    ticket_fecha_hora,
+    ticket_subtotal,
+    ticket_total,
+    --ticket_total_descuento_aplicado,
+	--ticket_total_descuento_aplicado_mp,
+    --ticket_monto_total_envio
+FROM REYES_DE_DATOS.Ticket;
+
 ----- ----- ----- ----- ----- 
 ----- CREACION DE VIEWS ----- 
 ----- ----- ----- ----- ----- 
