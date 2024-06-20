@@ -86,7 +86,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Empleado (
     empleado_apellido VARCHAR(30) NOT NULL,
     --empleado_dni INT NOT NULL,
     empleado_fecha_registro DATE,
-    --empleado_fecha_nacimiento DATE,
+    empleado_fecha_nacimiento DATE,
     --empleado_email VARCHAR(30) NOT NULL,
     --empleado_telefono DECIMAL(8, 0) NOT NULL
 );
@@ -130,25 +130,25 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Envio (
     --envio_estado VARCHAR(50) NOT NULL,
     envio_costo DECIMAL(10, 2) NOT NULL,
 );
+/*Ticket*/
+CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
+    id_venta INT PRIMARY KEY IDENTITY(1,1),
+	venta_numero INT NOT NULL,
+	venta_id_tipo_comprobante INT NOT NULL,
+    venta_id_sucursal INT NOT NULL,
+    venta_id_caja INT NOT NULL,
+    venta_id_empleado INT NOT NULL,
+    sticket_fecha_hora DATE NOT NULl,
+    venta_total DECIMAL(10, 2) NOT NULL
+    --ticket_total_descuento_aplicado,
+	--ticket_total_descuento_aplicado_mp,
+    --ticket_monto_total_envio
+);
+
 ----- ----- ----- ----- ----- ----- -----
 -----  CREACIÓN DE TABLAS-HECHOS ----- 
 ----- ----- ----- ----- ----- ----- ----
 -----
-/*Ticket*/
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_Venta(
-    id_ticket INT PRIMARY KEY IDENTITY(1,1),
-	ticket_numero INT NOT NULL, -- TICKET_NUMERO
-    id_tipo_comprobante INT NOT NULL,
-    id_sucursal INT NOT NULL,
-    id_caja INT NOT NULL,
-    id_empleado INT NOT NULL,
-    ticket_fecha_hora DATE NOT NULL,
-    ticket_subtotal DECIMAL(10, 2) NOT NULL,
-    venta_total DECIMAL(10, 2) NOT NULL,
-    ticket_total_descuento_aplicado INT NOT NULL,
-	ticket_total_descuento_aplicado_mp INT NOT NULL,
-    ticket_monto_total_envio INT NOT NULL
-);
 GO
 
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_descuento_venta(
@@ -394,49 +394,6 @@ SELECT
 FROM REYES_DE_DATOS.Producto;
 PRINT 'Migración de BI_Producto terminada'
 GO
------------------------------------------------------------- Envio
-CREATE TABLE BI_REYES_DE_DATOS.BI_Envio (
-    id_envio INT PRIMARY KEY IDENTITY(1,1),
-    id_ticket INT NOT NULL,
-    id_cliente INT NOT NULL,
-    envio_fecha_programada DATETIME NULL,
-    --envio_horario_inicio INT NOT NULL,
-    --envio_horario_fin INT NOT NULL,
-    envio_fecha_entrega DATETIME NOT NULL,
-    --envio_estado VARCHAR(50) NOT NULL,
-    envio_costo DECIMAL(10, 2) NOT NULL,
-);
------------------------------------------------------------- Promocion
-CREATE TABLE BI_REYES_DE_DATOS.BI_Promocion(
-	id_promo INT PRIMARY KEY NOT NULL,
-	promo_descripcion VARCHAR(50) NOT NULL,
-	--promo_fecha_inicio DATETIME NOT NULL,
-	--promo_fecha_fin DATETIME NOT NULL,
-);
------------------------------------------------------------- Empleado
-CREATE TABLE BI_REYES_DE_DATOS.BI_Empleado (
-    id_empleado INT PRIMARY KEY IDENTITY(1,1),
-    id_sucursal INT NOT NULL,
-    empleado_nombre VARCHAR(15) NOT NULL,
-    empleado_apellido VARCHAR(30) NOT NULL,
-    --empleado_dni INT NOT NULL,
-    empleado_fecha_registro DATE,
-    --empleado_fecha_nacimiento DATE,
-    --empleado_email VARCHAR(30) NOT NULL,
-    --empleado_telefono DECIMAL(8, 0) NOT NULL
-);
------------------------------------------------------------- Item Ticket
-CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket (
-    id_item_ticket INT PRIMARY KEY IDENTITY(1,1),
-    ticket_numero VARCHAR(50) NOT NULL,
-    id_sucursal INT NOT NULL,
-    id_tipo_comprobante INT NOT NULL,
-    id_producto INT NOT NULL,
-    id_promocion INT,
-    item_ticket_cantidad INT NOT NULL,
-    item_ticket_precio INT NOT NULL
-);
-GO
 ------------------------------------------------------------ Ticket / Venta -- TITO
 INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
 	venta_numero,
@@ -458,12 +415,93 @@ SELECT
     id_empleado,
     ticket_fecha_hora,
     ticket_subtotal,
-    ticket_total,
+    ticket_total
     --ticket_total_descuento_aplicado,
 	--ticket_total_descuento_aplicado_mp,
     --ticket_monto_total_envio
 FROM REYES_DE_DATOS.Ticket;
-
+PRINT 'Migración de BI_Venta terminada'
+GO
+------------------------------------------------------------ Envio
+INSERT INTO BI_REYES_DE_DATOS.BI_Envio (
+    id_ticket,
+    id_cliente,
+    envio_fecha_programada,
+    --envio_horario_inicio INT NOT NULL,
+    --envio_horario_fin INT NOT NULL,
+    envio_fecha_entrega,
+    --envio_estado VARCHAR(50) NOT NULL,
+    envio_costo
+)
+SELECT
+	id_ticket,
+    id_cliente,
+    envio_fecha_programada,
+    --envio_horario_inicio,
+    --envio_horario_fin,
+    envio_fecha_entrega,
+    --envio_estado,
+    envio_costo
+FROM REYES_DE_DATOS.Envio
+PRINT 'Migración de BI_Envio terminada'
+GO
+------------------------------------------------------------ Promocion
+INSERT INTO BI_REYES_DE_DATOS.BI_Promocion(
+	id_promo,
+	promo_descripcion
+	--promo_fecha_inicio DATETIME NOT NULL,
+	--promo_fecha_fin DATETIME NOT NULL,
+)
+SELECT
+	id_promo,
+	promo_descripcion
+FROM REYES_DE_DATOS.Promocion
+PRINT 'Migración de BI_Promo terminada'
+GO
+------------------------------------------------------------ Empleado
+INSERT INTO BI_REYES_DE_DATOS.BI_Empleado (
+    id_sucursal,
+    empleado_nombre,
+    empleado_apellido,
+    --empleado_dni INT NOT NULL,
+    empleado_fecha_registro,
+    empleado_fecha_nacimiento
+    --empleado_email VARCHAR(30) NOT NULL,
+    --empleado_telefono DECIMAL(8, 0) NOT NULL
+)
+SELECT
+	id_sucursal,
+    empleado_nombre,
+    empleado_apellido,
+    --empleado_dni INT NOT NULL,
+    empleado_fecha_registro,
+	empleado_fecha_nacimiento
+FROM REYES_DE_DATOS.Empleado
+PRINT 'Migración de BI_Empleado terminada'
+GO
+------------------------------------------------------------ Item Ticket
+INSERT INTO BI_REYES_DE_DATOS.BI_Ticket (
+    --id_item_ticket INT PRIMARY KEY IDENTITY(1,1),
+    ticket_numero,
+    id_sucursal,
+    id_tipo_comprobante,
+    id_producto,
+    id_promocion,
+    item_ticket_cantidad,
+    item_ticket_precio
+)
+SELECT
+	ticket_numero,
+    id_sucursal,
+    id_tipo_comprobante,
+    id_producto,
+    id_promocion,
+    item_ticket_cantidad,
+    item_ticket_precio
+FROM REYES_DE_DATOS.Item_Ticket
+GO
+PRINT 'Migración de BI_Ticket terminada'
+GO
 ----- ----- ----- ----- ----- 
 ----- CREACION DE VIEWS ----- 
 ----- ----- ----- ----- ----- 
