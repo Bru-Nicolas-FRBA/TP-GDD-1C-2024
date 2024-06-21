@@ -64,12 +64,14 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Sucursal(
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Rango_Etario(
 	id_rango_etario INT PRIMARY KEY,
-	rango_etario NVARCHAR(255) NOT NULL
+	rango_etario_inicio int NOT NULL,
+	rango_etario_final int not null 
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_turno(
     id_turno INT PRIMARY KEY IDENTITY(1,1),
-    turno NVARCHAR(255) NOT NULL
+    turno_inicio TIME NOT NULL,
+	turno_final TIME NOT NULL
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_medio_de_pago(
@@ -107,8 +109,9 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Descuento (
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Cliente (
     id_cliente INT PRIMARY KEY IDENTITY(1,1),
-    cliente_nombre VARCHAR(100),
-    cliente_apellido VARCHAR(100)    
+    cliente_nombre VARCHAR(20) not null,
+    cliente_apellido VARCHAR(20) not null,
+	cliente_id_domicilio int not null,
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Empleado (
@@ -142,7 +145,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Promocion(
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket
  (
-    id_item_ticket INT PRIMARY KEY IDENTITY(1,1),
+    id_ticket INT PRIMARY KEY IDENTITY(1,1),
     ticket_numero VARCHAR(50) NOT NULL,
     id_sucursal INT NOT NULL, 
     id_tipo_comprobante INT NOT NULL,
@@ -204,13 +207,30 @@ ALTER TABLE BI_REYES_DE_DATOS.BI_Producto ADD CONSTRAINT FK_id_producto_subcateg
 
 ALTER TABLE BI_REYES_DE_DATOS.BI_Empleado ADD CONSTRAINT FK_id_sucursal_empleado FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
 
-ALTER TABLE BI_REYES_DE_DATOS.BI_Cliente ADD CONSTRAINT FK_cliente_id_domicilio FOREIGN KEY (cliente_id_domicilio) REFERENCES BI_REYES_DE_DATOS.BI_Domicilio(id_domicilio)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Cliente ADD CONSTRAINT FK_cliente_id_domicilio FOREIGN KEY (cliente_id_domicilio) REFERENCES BI_REYES_DE_DATOS.BI_Ubicacion(id_ubicacion)
+
 GO
 
 ----- ----- ----- ----- ----- ----
 -----  CREACIÓN DE FUNCIONES -----
 ----- ----- ----- ----- ----- ----- 
-
+------------------------------------------------------------ Turno
+CREATE FUNCTION BI_REYES_DE_DATOS.turno(@fecha_hora DATETIME)
+RETURNS VARCHAR(50)
+AS
+BEGIN
+    DECLARE @turno VARCHAR(50);
+    SELECT @turno = 
+        CASE 
+            WHEN @fecha_hora >= CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 08:00:00' AS DATETIME) AND @fecha_hora < CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 12:00:00' AS DATETIME) THEN '8 a 12'
+            WHEN @fecha_hora >= CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 12:00:00' AS DATETIME) AND @fecha_hora < CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 16:00:00' AS DATETIME) THEN '12 a 16'
+            WHEN @fecha_hora >= CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 16:00:00' AS DATETIME) AND @fecha_hora < CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 20:00:00' AS DATETIME) THEN '16 a 20'
+            ELSE 'Fuera de turno'
+        END;
+    RETURN @turno;
+END;
+GO
+------------------------------------------------------------ Rango Etario
 CREATE FUNCTION BI_REYES_DE_DATOS.rangoEtario(@fechaNacimiento AS DATE)
 RETURNS INT
 AS
@@ -231,7 +251,7 @@ BEGIN
 RETURN @rangoEtario
 END
 GO
------ 
+------------------------------------------------------------ Cuatrimestre
 CREATE FUNCTION BI_REYES_DE_DATOS.cuatrimestre(@mes INT)
 RETURNS INT
 AS
@@ -302,18 +322,20 @@ FROM REYES_DE_DATOS.Sucursal
 PRINT 'Migración de BI_Sucursal terminada'
 GO
 ------------------------------------------------------------ Rango Etario
-INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (1, '<25')
-INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (2, '25-34')
-INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (3, '35-50')
-INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario) VALUES (4, '<50')
+INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (1,0,24)
+INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (2,25,34)
+INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (3,35,49)
+INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (4,50,100)
 PRINT 'Migración de BI_rango_etario terminada';
 GO
 ------------------------------------------------------------ Turno
-INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('08:00 - 12:00')
-INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('12:00 - 16:00')
-INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno) VALUES ('16:00 - 20:00')
+/*
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno_inicio, turno_final) VALUES ('08:00:00', '12:00:00')
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno_inicio, turno_final) VALUES ('12:00:00', '16:00:00')
+INSERT INTO BI_REYES_DE_DATOS.BI_turno (turno_inicio, turno_final) VALUES ('16:00:00', '20:00:00')
 PRINT 'Migración de BI_turno terminada'
 GO
+*/
 ------------------------------------------------------------ Medio De Pago
 INSERT INTO BI_REYES_DE_DATOS.BI_medio_de_pago(
     medio_de_pago_clasificacion, -- credito / debito / efectivo / etc
@@ -376,12 +398,14 @@ GO
 ------------------------------------------------------------ Cliente
 INSERT INTO BI_REYES_DE_DATOS.BI_Cliente(
     cliente_nombre,
-    cliente_apellido  
+    cliente_apellido,
+	cliente_id_domicilio
 )
 SELECT
 	cliente_nombre,
-    cliente_apellido
-FROM REYES_DE_DATOS.Cliente;
+    cliente_apellido,
+	c.cliente_id_domicilio
+FROM REYES_DE_DATOS.Cliente c;
 PRINT 'Migración de BI_Cliente terminada'
 GO
 ------------------------------------------------------------ Producto
@@ -579,9 +603,6 @@ Martin	2-6-10
 Alan	3-7-11
 Carmen	4-8-12
 */
------ ----- ----- -----
------ VIEWS BRU -----
------ ----- ----- -----
 ----- 
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
@@ -592,7 +613,7 @@ GO
 CREATE VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual AS
 SELECT
     AVG(v.venta_total) AS PromedioMensual,
-    vu.id_ubicacion,
+    l.localidad_nombre,
     t.anio AS Año,
     t.mes AS Mes
 FROM BI_REYES_DE_DATOS.BI_Venta v
@@ -600,6 +621,7 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
 	JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON vt.id_tiempo = t.id_tiempo
 	JOIN BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion vu ON v.id_venta = vu.id_venta
 	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u ON vu.id_ubicacion = u.id_ubicacion
+	join REYES_DE_DATOS.Localidad l on u.id_localidad = l.id_localidad
 GROUP BY
     t.mes,
     t.anio,
@@ -630,38 +652,112 @@ GO
 ----- 
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
 ----- 
-CREATE VIEW BI_Top5_Localidades_Costo_Envio AS
-SELECT TOP 5
-    Cliente.localidad AS nombre_localidad,
-    SUM(Envio.costo_envio) AS total_costo_envio
-FROM
-    BI_Envio AS Envio
-    JOIN BI_Cliente AS Cliente ON Envio.id_cliente = Cliente.id_cliente
-GROUP BY
-    Cliente.localidad
-ORDER BY
-    SUM(Envio.costo_envio) DESC;
+IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio; END GO
 
------ ----- ----- -----
------ OTRAS VIEWS -----
------ ----- ----- -----
+CREATE VIEW BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio AS
+SELECT TOP 5
+    c.id_cliente as Cliente,
+    l.localidad_nombre as Localidad,
+    sum(e.envio_costo) as CostoEnvio
+FROM BI_REYES_DE_DATOS.BI_Envio e
+	JOIN BI_REYES_DE_DATOS.BI_Cliente c on e.id_cliente = c.id_cliente
+	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u on c.cliente_id_domicilio = u.id_ubicacion
+	JOIN REYES_DE_DATOS.Localidad l on u.id_localidad = l.id_localidad
+GROUP BY
+    c.id_cliente,
+	l.localidad_nombre
+ORDER BY
+    sum(e.envio_costo) DESC;
+GO
 ----- 
 -- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
 ----- 
-CREATE VIEW Vista_Cantidad_Unidades_Promedio AS
+IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio; END GO
+
+CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio AS
 SELECT
-    YEAR(t.ticket_fecha_hora) AS anio,
-    (MONTH(t.ticket_fecha_hora) - 1) / 4 + 1 AS cuatrimestre,
-    DATEPART(HOUR, t.ticket_fecha_hora) AS hora,
-    AVG(it.item_cantidad) AS cantidad_unidades_promedio
-FROM
-    Ticket t
-    JOIN Item_Ticket it ON t.id_ticket = it.id_ticket
+	--promedio cantidad unidades
+	avg(t.item_ticket_cantidad) as Promedio,
+	--para cada turno
+	BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora) as Turno,
+    --para cada cuatrimestre
+	tmp.cuatrimestre as Cuatrimestre,
+    --para cada anio
+	tmp.anio as Año
+FROM BI_REYES_DE_DATOS.BI_Venta v
+	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_venta = vt.id_tiempo
+	join BI_REYES_DE_DATOS.BI_Tiempo tmp on vt.id_tiempo = tmp.id_tiempo
+	join BI_REYES_DE_DATOS.BI_Ticket t on v.id_ticket = t.id_ticket
 GROUP BY
-    YEAR(t.ticket_fecha_hora),
-    (MONTH(t.ticket_fecha_hora) - 1) / 4 + 1,
-    DATEPART(HOUR, t.ticket_fecha_hora);
+	2,
+	tmp.cuatrimestre,
+	tmp.anio
 GO
+----- 
+-- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
+----- 
+CREATE VIEW Vista_Categorias_Productos_Con_Mayor_Descuento AS
+SELECT
+    YEAR(p.fecha_inicio) AS anio,
+    CASE
+        WHEN MONTH(p.fecha_inicio) BETWEEN 1 AND 3 THEN 'Q1'
+        WHEN MONTH(p.fecha_inicio) BETWEEN 4 AND 6 THEN 'Q2'
+        WHEN MONTH(p.fecha_inicio) BETWEEN 7 AND 9 THEN 'Q3'
+        ELSE 'Q4'
+    END AS cuatrimestre,
+    pr.categoria,
+    AVG(p.descuento) AS descuento_promedio
+FROM
+    Promocion p
+    JOIN Producto pr ON p.id_producto = pr.id_producto
+GROUP BY
+    YEAR(p.fecha_inicio),
+    CASE
+        WHEN MONTH(p.fecha_inicio) BETWEEN 1 AND 3 THEN 'Q1'
+        WHEN MONTH(p.fecha_inicio) BETWEEN 4 AND 6 THEN 'Q2'
+        WHEN MONTH(p.fecha_inicio) BETWEEN 7 AND 9 THEN 'Q3'
+        ELSE 'Q4'
+    END,
+    pr.categoria
+ORDER BY
+    YEAR(p.fecha_inicio),
+    CASE
+        WHEN MONTH(p.fecha_inicio) BETWEEN 1 AND 3 THEN 'Q1'
+        WHEN MONTH(p.fecha_inicio) BETWEEN 4 AND 6 THEN 'Q2'
+        WHEN MONTH(p.fecha_inicio) BETWEEN 7 AND 9 THEN 'Q3'
+        ELSE 'Q4'
+    END,
+    AVG(p.descuento) DESC;
+GO
+----- 
+-- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
+----- 
+CREATE VIEW BI_Top3_Sucursales_Pagos_Cuotas AS
+SELECT TOP 3
+    Sucursal.nombre AS nombre_sucursal,
+    Medio_Pago.nombre AS nombre_medio_pago,
+    YEAR(Venta.fecha_venta) AS año,
+    MONTH(Venta.fecha_venta) AS mes,
+    SUM(Venta.monto_total) AS total_pagos_cuotas
+FROM
+    BI_Venta AS Venta
+    JOIN BI_Medio_Pago AS Medio_Pago ON Venta.id_medio_pago = Medio_Pago.id_medio_pago
+    JOIN BI_Sucursal AS Sucursal ON Venta.id_sucursal = Sucursal.id_sucursal
+WHERE
+    Medio_Pago.tipo_pago = 'Cuotas'
+GROUP BY
+    Sucursal.nombre,
+    Medio_Pago.nombre,
+    YEAR(Venta.fecha_venta),
+    MONTH(Venta.fecha_venta)
+ORDER BY
+    SUM(Venta.monto_total) DESC;
+GO
+----- ----- ----- -----
+----- OTRAS VIEWS -----
+----- ----- ----- -----
 ----- 
 -- 3) Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
 ----- 
@@ -710,43 +806,6 @@ GROUP BY
     v.localidad,
     v.turno;
 GO
-
------ 
--- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
------ 
-CREATE VIEW Vista_Categorias_Productos_Con_Mayor_Descuento AS
-SELECT
-    YEAR(p.fecha_inicio) AS anio,
-    CASE
-        WHEN MONTH(p.fecha_inicio) BETWEEN 1 AND 3 THEN 'Q1'
-        WHEN MONTH(p.fecha_inicio) BETWEEN 4 AND 6 THEN 'Q2'
-        WHEN MONTH(p.fecha_inicio) BETWEEN 7 AND 9 THEN 'Q3'
-        ELSE 'Q4'
-    END AS cuatrimestre,
-    pr.categoria,
-    AVG(p.descuento) AS descuento_promedio
-FROM
-    Promocion p
-    JOIN Producto pr ON p.id_producto = pr.id_producto
-GROUP BY
-    YEAR(p.fecha_inicio),
-    CASE
-        WHEN MONTH(p.fecha_inicio) BETWEEN 1 AND 3 THEN 'Q1'
-        WHEN MONTH(p.fecha_inicio) BETWEEN 4 AND 6 THEN 'Q2'
-        WHEN MONTH(p.fecha_inicio) BETWEEN 7 AND 9 THEN 'Q3'
-        ELSE 'Q4'
-    END,
-    pr.categoria
-ORDER BY
-    YEAR(p.fecha_inicio),
-    CASE
-        WHEN MONTH(p.fecha_inicio) BETWEEN 1 AND 3 THEN 'Q1'
-        WHEN MONTH(p.fecha_inicio) BETWEEN 4 AND 6 THEN 'Q2'
-        WHEN MONTH(p.fecha_inicio) BETWEEN 7 AND 9 THEN 'Q3'
-        ELSE 'Q4'
-    END,
-    AVG(p.descuento) DESC;
-GO
 ----- 
 -- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
 ----- 
@@ -793,30 +852,7 @@ GROUP BY
     END,
     Cliente.rango_etario;
 GO
------ 
--- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
------ 
-CREATE VIEW BI_Top3_Sucursales_Pagos_Cuotas AS
-SELECT TOP 3
-    Sucursal.nombre AS nombre_sucursal,
-    Medio_Pago.nombre AS nombre_medio_pago,
-    YEAR(Venta.fecha_venta) AS año,
-    MONTH(Venta.fecha_venta) AS mes,
-    SUM(Venta.monto_total) AS total_pagos_cuotas
-FROM
-    BI_Venta AS Venta
-    JOIN BI_Medio_Pago AS Medio_Pago ON Venta.id_medio_pago = Medio_Pago.id_medio_pago
-    JOIN BI_Sucursal AS Sucursal ON Venta.id_sucursal = Sucursal.id_sucursal
-WHERE
-    Medio_Pago.tipo_pago = 'Cuotas'
-GROUP BY
-    Sucursal.nombre,
-    Medio_Pago.nombre,
-    YEAR(Venta.fecha_venta),
-    MONTH(Venta.fecha_venta)
-ORDER BY
-    SUM(Venta.monto_total) DESC;
-GO
+
 ----- 
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
 ----- 
