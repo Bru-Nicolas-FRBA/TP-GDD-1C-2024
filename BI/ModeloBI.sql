@@ -1,3 +1,4 @@
+------------------------------------------------------------ Borramos todas las tablas
 /*
 if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'Regla_x_Promocion') begin DROP TABLE REYES_DE_DATOS.Regla_x_Promocion; end
 if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'Promocion_X_Producto') begin DROP TABLE REYES_DE_DATOS.Promocion_X_Producto; end
@@ -27,6 +28,10 @@ if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYE
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'Producto_categoria') begin DROP TABLE REYES_DE_DATOS.Producto_categoria; end
 GO
 */
+------------------------------------------------------------ Borramos todas las vistas
+IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual; END
+GO
 
 USE [GD1C2024]
 GO
@@ -580,7 +585,10 @@ Carmen	4-8-12
 ----- 
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL DROP VIEW BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual; GO
+IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual; END
+GO
+
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual AS
 SELECT
     AVG(v.venta_total) AS PromedioMensual,
@@ -588,19 +596,19 @@ SELECT
     t.anio AS Año,
     t.mes AS Mes
 FROM BI_REYES_DE_DATOS.BI_Venta v
-	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_venta = vt.id_venta
-	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
-	join BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion vu on v.id_venta = vu.id_venta
-	join BI_REYES_DE_DATOS.BI_Ubicacion u on vu.id_ubicacion = u.id_ubicacion
+	JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON v.id_venta = vt.id_venta
+	JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON vt.id_tiempo = t.id_tiempo
+	JOIN BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion vu ON v.id_venta = vu.id_venta
+	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u ON vu.id_ubicacion = u.id_ubicacion
 GROUP BY
     t.mes,
-	t.anio,
+    t.anio,
     u.id_localidad;
-END
 GO
 ----- 
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
 ----- 
+
 CREATE VIEW BI_Porcentaje_Descuento_Por_Mes AS
 SELECT
     YEAR(v.fecha_venta) AS anio,
