@@ -173,10 +173,10 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
     venta_id_caja INT NOT NULL,
     venta_id_empleado INT NOT NULL,
     ticket_fecha_hora DATE NOT NULl,
-    venta_total DECIMAL(10, 2) NOT NULL
-    --ticket_total_descuento_aplicado,
-	--ticket_total_descuento_aplicado_mp,
-    --ticket_monto_total_envio
+    venta_total DECIMAL(10, 2) NOT NULL,
+    ticket_total_descuento_aplicado DECIMAL(10, 2),
+	ticket_total_descuento_aplicado_mp DECIMAL(10, 2),
+    ticket_monto_total_envio DECIMAL(10, 2)
 );
 ------------------------------------------------------------------------------------------------
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
@@ -412,10 +412,10 @@ INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
     venta_id_caja,
     venta_id_empleado,
     ticket_fecha_hora,
-    venta_total
-    --ticket_total_descuento_aplicado,
-	--ticket_total_descuento_aplicado_mp,
-    --ticket_monto_total_envio
+    venta_total,
+    ticket_total_descuento_aplicado,
+	ticket_total_descuento_aplicado_mp,
+    ticket_monto_total_envio
 )
 SELECT
 	t.id_ticket,
@@ -426,10 +426,10 @@ SELECT
     id_empleado,
     ticket_fecha_hora,
     ticket_subtotal,
-    ticket_total
-    --ticket_total_descuento_aplicado,
-	--ticket_total_descuento_aplicado_mp,
-    --ticket_monto_total_envio
+    ticket_total,
+    t.ticket_total_descuento_aplicado,
+	ticket_total_descuento_aplicado_mp,
+    ticket_monto_total_envio
 FROM REYES_DE_DATOS.Ticket t;
 PRINT 'Migración de BI_Venta terminada'
 GO
@@ -510,7 +510,7 @@ SELECT
     id_promocion,
     item_ticket_cantidad,
     item_ticket_precio
-FROM REYES_DE_DATOS.Item_Ticket
+FROM REYES_DE_DATOS.Item_Ticket t
 PRINT 'Migración de BI_Ticket terminada'
 GO
 ----- ----- ----- ----- ----- 
@@ -585,11 +585,11 @@ Carmen	4-8-12
 ----- 
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual; END
+IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual; END
 GO
 
-CREATE VIEW BI_REYES_DE_DATOS.Vista_Ticket_Promedio_Mensual AS
+CREATE VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual AS
 SELECT
     AVG(v.venta_total) AS PromedioMensual,
     vu.id_ubicacion,
@@ -608,22 +608,24 @@ GO
 ----- 
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
 ----- 
+IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes; END
+GO
 
-CREATE VIEW BI_Porcentaje_Descuento_Por_Mes AS
+CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes AS
 SELECT
-    YEAR(v.fecha_venta) AS anio,
-    MONTH(v.fecha_venta) AS mes,
-    SUM(v.descuento) AS total_descuento,
-    SUM(v.monto_total) AS total_importe,
-    (SUM(v.descuento) / SUM(v.monto_total)) * 100 AS porcentaje_descuento
-FROM
-    BI_Venta v
+	t.anio as Año,
+	t.mes as Mes,
+	(count(distinct v.ticket_total_descuento_aplicado) * 100) / (count (distinct v.id_venta)) as Porcentaje
+FROM BI_REYES_DE_DATOS.BI_Venta v
+	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
+	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
 GROUP BY
-    YEAR(v.fecha_venta),
-    MONTH(v.fecha_venta)
+	t.anio,
+	t.mes
 ORDER BY
-    YEAR(v.fecha_venta),
-    MONTH(v.fecha_venta);
+	t.anio desc,
+	t.mes desc
 GO
 ----- 
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
