@@ -779,8 +779,7 @@ SELECT
         /
         COUNT(e.id_envio)
     ) AS PorcentajeDeCumplimiento
-FROM 
-    BI_REYES_DE_DATOS.BI_Envio e
+FROM BI_REYES_DE_DATOS.BI_Envio e
     JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
@@ -892,34 +891,31 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
 GROUP BY
     l.localidad_nombre,
     t.mes,
-    t.anio;
+    t.anio,
+    BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora)
+order by l.localidad_nombre;
 GO
 ----- 
 -- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
 ----- 
-CREATE VIEW BI_Cantidad_Envios_Rango_Etario AS
+IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario; END
+GO
+
+CREATE VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario AS
 SELECT
-    YEAR(Envio.fecha_envio) AS anio,
-    CASE
-        WHEN MONTH(Envio.fecha_envio) BETWEEN 1 AND 3 THEN '1er Cuatrimestre'
-        WHEN MONTH(Envio.fecha_envio) BETWEEN 4 AND 6 THEN '2do Cuatrimestre'
-        WHEN MONTH(Envio.fecha_envio) BETWEEN 7 AND 9 THEN '3er Cuatrimestre'
-        WHEN MONTH(Envio.fecha_envio) BETWEEN 10 AND 12 THEN '4to Cuatrimestre'
-    END AS cuatrimestre,
-    Cliente.rango_etario,
-    COUNT(*) AS cantidad_envios
-FROM
-    BI_Envio AS Envio
-    JOIN BI_Cliente AS Cliente ON Envio.id_cliente = Cliente.id_cliente
+    BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento) as RangoEtarioCliente,
+    t.cuatrimestre as Cuatrimeste,
+    t.anio as Año,
+    count(*) as CantidadEnvios
+FROM BI_REYES_DE_DATOS.BI_Envio e
+    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_venta = v.id_venta
+    JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
+    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo 
 GROUP BY
-    YEAR(Envio.fecha_envio),
-    CASE
-        WHEN MONTH(Envio.fecha_envio) BETWEEN 1 AND 3 THEN '1er Cuatrimestre'
-        WHEN MONTH(Envio.fecha_envio) BETWEEN 4 AND 6 THEN '2do Cuatrimestre'
-        WHEN MONTH(Envio.fecha_envio) BETWEEN 7 AND 9 THEN '3er Cuatrimestre'
-        WHEN MONTH(Envio.fecha_envio) BETWEEN 10 AND 12 THEN '4to Cuatrimestre'
-    END,
-    Cliente.rango_etario;
+    BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
+    t.cuatrimestre,
+    t.anio
 GO
 ----- 
 -- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
