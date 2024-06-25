@@ -923,13 +923,9 @@ GO
 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago AS
 SELECT
-    --Medio_Pago.medio_pago,
     mp.medio_de_pago_clasificacion as MedioPago,
-    --YEAR(Venta.fecha_venta) AS año,
     t.anio as Año,
-    --DATEPART(QUARTER, Venta.fecha_venta) AS cuatrimestre,
     t.cuatrimestre as Cuatrimestre,
-    --(SUM(Venta.descuento) / (SUM(Venta.monto_total) + SUM(Venta.descuento))) * 100 AS porcentaje_descuento
     (count(distinct v.ticket_total_descuento_aplicado) * 100) / (count (distinct v.id_venta)) as Porcentaje
 FROM BI_REYES_DE_DATOS.BI_Venta v
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
@@ -939,7 +935,8 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
     join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
     join REYES_DE_DATOS.Tipo_medio_de_pago mp on p.id_tipo_medio_de_pago = mp.id_tipo_medio_de_pago
 GROUP BY
-    Medio_Pago.medio_pago,
-    YEAR(Venta.fecha_venta),
-    DATEPART(QUARTER, Venta.fecha_venta);
+    mp.medio_de_pago_clasificacion,
+    t.anio,
+    t.cuatrimestre;
 GO
+
