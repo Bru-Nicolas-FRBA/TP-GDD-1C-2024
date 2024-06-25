@@ -175,6 +175,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
     venta_id_sucursal INT NOT NULL,
     venta_id_caja INT NOT NULL,
     venta_id_empleado INT NOT NULL,
+    venta_id_cliente int not null,
     ticket_fecha_hora DATE NOT NULl,
     venta_total DECIMAL(10, 2) NOT NULL,
     ticket_total_descuento_aplicado DECIMAL(10, 2),
@@ -190,6 +191,7 @@ ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_tipo_comprobante_hec
 ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_sucursal_hechos_venta FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_caja_hechos_venta FOREIGN KEY (id_caja) REFERENCES BI_REYES_DE_DATOS.BI_Caja(id_caja)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_empleado_hechos_venta FOREIGN KEY (id_empleado) REFERENCES BI_REYES_DE_DATOS.BI_Empleado(id_empleado)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_cliente_venta FOREIGN KEY (id_cliente) REFERENCES BI_REYES_DE_DATOS.BI_Cliente(id_cliente)
 
 ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket
  ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES BI_REYES_DE_DATOS.BI_Producto(id_producto)
@@ -436,6 +438,7 @@ INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
     venta_id_sucursal,
     venta_id_caja,
     venta_id_empleado,
+    venta_id_cliente,
     ticket_fecha_hora,
     venta_total,
     ticket_total_descuento_aplicado,
@@ -449,13 +452,16 @@ SELECT
     id_sucursal,
     id_caja,
     id_empleado,
+    p.id_cliente,
     ticket_fecha_hora,
     ticket_subtotal,
     ticket_total,
     t.ticket_total_descuento_aplicado,
 	ticket_total_descuento_aplicado_mp,
     ticket_monto_total_envio
-FROM REYES_DE_DATOS.Ticket t;
+FROM REYES_DE_DATOS.Ticket t
+    JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
+    JOIN REYES_DE_DATOS.Pago p on x.id_pago = p.id_pago;
 PRINT 'Migración de BI_Venta terminada'
 GO
 ------------------------------------------------------------ Envio
@@ -817,16 +823,11 @@ GO
 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
 SELECT TOP 3
-    --Sucursal.nombre AS nombre_sucursal,
     s.id_sucursal as Sucursal,
-    --Medio_Pago.nombre AS nombre_medio_pago,
     mp.medio_de_pago_clasificacion as MedioDePago,
-    --YEAR(Venta.fecha_venta) AS año,
     t.anio as Anio,
-    --MONTH(Venta.fecha_venta) AS mes,
     t.mes as Mes,
-    --SUM(Venta.monto_total) AS total_pagos_cuotas
-    sum(p.pago_importe) as ImporteCuotas--kk
+    sum(p.pago_importe) as ImporteCuotas
 FROM BI_REYES_DE_DATOS.BI_Venta v
 	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
 	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_item_ticket
@@ -845,13 +846,20 @@ GO
 ----- 
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
 ----- 
+IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario; END
+GO
+
 CREATE VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario AS
 SELECT
     BI_REYES_DE_DATOS.rangoEtario(c.fecha_nacimiento) AS RangoEtario,
-    AVG(q.importe_cuota) AS PromedioImporteCuota
-FROM 
-    BI_REYES_DE_DATOS.BI_Cuota q
-    JOIN BI_REYES_DE_DATOS.BI_Cliente c ON q.id_cliente = c.id_cliente
+    AVG(p.pago_importe) AS PromedioImporteCuota
+FROM BI_REYES_DE_DATOS.BI_Venta v
+	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
+	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_item_ticket
+	join REYES_DE_DATOS.Ticket_X_Pago x on x.id_ticket = v.id_ticket
+    join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
+    JOIN BI_REYES_DE_DATOS.BI_Cliente c ON p. = c.id_cliente
 GROUP BY
     BI_REYES_DE_DATOS.rangoEtario(c.fecha_nacimiento)
 ORDER BY
