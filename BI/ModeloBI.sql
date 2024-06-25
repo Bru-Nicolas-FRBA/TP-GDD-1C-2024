@@ -175,7 +175,6 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
     venta_id_sucursal INT NOT NULL,
     venta_id_caja INT NOT NULL,
     venta_id_empleado INT NOT NULL,
-	venta_id_tipo_medio_pago int not null,
     ticket_fecha_hora DATE NOT NULl,
     venta_total DECIMAL(10, 2) NOT NULL,
     ticket_total_descuento_aplicado DECIMAL(10, 2),
@@ -436,7 +435,6 @@ INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
     venta_id_sucursal,
     venta_id_caja,
     venta_id_empleado,
-	venta_id_tipo_medio_pago,
     ticket_fecha_hora,
     venta_total,
     ticket_total_descuento_aplicado,
@@ -450,16 +448,13 @@ SELECT
     id_sucursal,
     id_caja,
     id_empleado,
-	p.id_tipo_medio_de_pago,
     ticket_fecha_hora,
     ticket_subtotal,
     ticket_total,
     t.ticket_total_descuento_aplicado,
 	ticket_total_descuento_aplicado_mp,
     ticket_monto_total_envio
-FROM REYES_DE_DATOS.Ticket t
-	JOIN REYES_DE_DATOS.Pago p on t.id_ticket = p.id_ticket
-;
+FROM REYES_DE_DATOS.Ticket t;
 PRINT 'Migración de BI_Venta terminada'
 GO
 ------------------------------------------------------------ Envio
@@ -741,27 +736,21 @@ BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas; END GO
 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
 SELECT TOP 3
-	s.id_sucursal as Sucursal,
-	sum(v.venta_total) as TotalVenta,
-	mp.medio_de_pago_detalle as MedioDePago,
-	t.mes as Mes,
-	t.anio as Anio
+    --Sucursal.nombre AS nombre_sucursal,
+    --Medio_Pago.nombre AS nombre_medio_pago,
+    --YEAR(Venta.fecha_venta) AS año,
+    --MONTH(Venta.fecha_venta) AS mes,
+    --SUM(Venta.monto_total) AS total_pagos_cuotas
 FROM BI_REYES_DE_DATOS.BI_Venta v
-	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
-	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
 	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
 	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_item_ticket
-	join REYES_DE_DATOS.Ticket_X_Pago x on v.id_venta = x.id_ticket
-	join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
-	join BI_REYES_DE_DATOS.BI_medio_de_pago mp on p.id_tipo_medio_de_pago = mp.id_medio_de_pago
-WHERE p.medio_de_pago_cuotas is not null
+	join BI_REYES_DE_DATOS.BI_medio_de_pago mp on tk. 
+WHERE
+
 GROUP BY
-	s.id_sucursal,
-	mp.medio_de_pago_detalle,
-	t.mes,
-	t.anio
+
 ORDER BY
-    sum(v.venta_total) DESC;
+    SUM(Venta.monto_total) DESC;
 GO
 ----- ----- ----- -----
 ----- OTRAS VIEWS -----
