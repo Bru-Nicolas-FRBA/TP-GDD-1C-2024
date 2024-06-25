@@ -181,6 +181,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
 	ticket_total_descuento_aplicado_mp DECIMAL(10, 2),
     ticket_monto_total_envio DECIMAL(10, 2)
 );
+
 ------------------------------------------------------------------------------------------------
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
 ------------------------------------------------------------------------------------------------
@@ -607,7 +608,7 @@ Carmen	4-8-12
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
 IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual; END
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual; END 
 GO
 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual AS
@@ -628,6 +629,72 @@ GROUP BY
     u.id_localidad;
 GO
 ----- 
+-- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
+----- 
+IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio; END
+GO
+
+CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio AS
+SELECT
+	--promedio cantidad unidades
+	avg(t.item_ticket_cantidad) as Promedio,
+	--para cada turno
+	BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora) as Turno,
+    --para cada cuatrimestre
+	tmp.cuatrimestre as Cuatrimestre,
+    --para cada anio
+	tmp.anio as Año
+FROM BI_REYES_DE_DATOS.BI_Venta v
+	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_venta = vt.id_tiempo
+	join BI_REYES_DE_DATOS.BI_Tiempo tmp on vt.id_tiempo = tmp.id_tiempo
+	join BI_REYES_DE_DATOS.BI_Ticket t on t.id_item_ticket = v.id_ticket
+GROUP BY
+	2,
+	tmp.cuatrimestre,
+	tmp.anio
+GO
+----- 
+-- 3) REVISAR Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
+----- 
+IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre; END
+GO
+
+CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre AS
+SELECT
+    BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento) as RangoEtario,
+    c.caja_tipo as TipoCaja,
+    t.cuatrimestre as Cuatrimestre,
+    (
+        SUM(v.venta_total) * 100
+        /
+        (
+            SELECT SUM(v2.venta_total)
+                FROM BI_REYES_DE_DATOS.BI_Venta v2
+                    JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt2 ON v2.id_ticket = vt2.id_venta
+                    JOIN BI_REYES_DE_DATOS.BI_Tiempo t2 ON vt2.id_tiempo = t2.id_tiempo
+                WHERE
+                    t2.anio = t.anio
+        )
+    ) as Porcentaje
+FROM 
+    BI_REYES_DE_DATOS.BI_Venta v
+    JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON v.id_ticket = vt.id_venta
+    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON vt.id_tiempo = t.id_tiempo
+    JOIN BI_REYES_DE_DATOS.BI_Caja c ON c.id_caja = v.id_venta
+    JOIN BI_REYES_DE_DATOS.BI_Empleado e ON v.id_empleado = e.id_empleado
+GROUP BY
+    BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
+    c.caja_tipo,
+    t.cuatrimestre,
+    t.anio
+ORDER BY
+    RangoEtario,
+    TipoCaja,
+    Cuatrimestre
+GO
+----- 
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
 ----- 
 IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes', 'V') IS NOT NULL 
@@ -642,12 +709,83 @@ SELECT
 FROM BI_REYES_DE_DATOS.BI_Venta v
 	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
 	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
+WHERE v.ticket_total_descuento_aplicado is not null
 GROUP BY
 	t.anio,
 	t.mes
 ORDER BY
 	t.anio desc,
 	t.mes desc
+GO
+----- 
+-- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
+-----
+IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento; END
+GO
+
+CREATE VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento AS
+SELECT top 3
+	t.anio as Anio,
+    t.cuatrimestre as Cuatrimestre,
+    pc.producto_categoria_detalle as Categoria,
+    sum(v.ticket_total_descuento_aplicado) as DescuentoAplicado
+FROM BI_REYES_DE_DATOS.BI_Venta v
+	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
+	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
+	join BI_REYES_DE_DATOS.BI_Ticket tck on v.id_ticket = tck.id_item_ticket
+	join BI_REYES_DE_DATOS.BI_Producto p on tck.id_producto = p.id_producto
+	join BI_REYES_DE_DATOS.BI_Producto_categoria pc on p.id_producto_categoria = pc.id_producto_categoria
+WHERE v.ticket_total_descuento_aplicado IS NOT NULL
+GROUP BY
+    t.anio,
+	t.cuatrimestre,
+	pc.id_producto_categoria
+ORDER BY 
+	sum(v.ticket_total_descuento_aplicado) desc;
+GO
+----- 
+-- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
+-----
+IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios', 'V') IS NOT NULL 
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios; END
+GO
+
+CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios AS
+SELECT
+    s.id_sucursal AS Sucursal,
+    t.anio AS Año,
+    t.mes AS Mes,
+    (
+        (
+            COUNT(
+                CASE 
+                    WHEN 
+                        e.envio_fecha_entrega <= e.envio_fecha_programada
+                    THEN 1 
+                ELSE NULL 
+                END
+            ) * 100.0
+        )
+        /
+        COUNT(e.id_envio)
+    ) AS PorcentajeDeCumplimiento
+FROM 
+    BI_REYES_DE_DATOS.BI_Envio e
+    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_venta = v.id_venta
+    JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
+    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
+    JOIN BI_REYES_DE_DATOS.BI_Sucursal s ON v.id_sucursal = s.id_sucursal
+where e.envio_fecha_entrega is not null
+    and e.envio_fecha_programada is not null
+GROUP BY
+    s.id_sucursal,
+    t.anio,
+    t.mes
+ORDER BY
+    s.id_sucursal,
+    t.anio,
+    t.mes
 GO
 ----- 
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
@@ -671,120 +809,57 @@ ORDER BY
     sum(e.envio_costo) DESC;
 GO
 ----- 
--- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
------ 
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio; END GO
-
-CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio AS
-SELECT
-	--promedio cantidad unidades
-	avg(t.item_ticket_cantidad) as Promedio,
-	--para cada turno
-	BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora) as Turno,
-    --para cada cuatrimestre
-	tmp.cuatrimestre as Cuatrimestre,
-    --para cada anio
-	tmp.anio as Año
-FROM BI_REYES_DE_DATOS.BI_Venta v
-	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_venta = vt.id_tiempo
-	join BI_REYES_DE_DATOS.BI_Tiempo tmp on vt.id_tiempo = tmp.id_tiempo
-	join BI_REYES_DE_DATOS.BI_Ticket t on t.id_item_ticket = v.id_ticket
-GROUP BY
-	2,
-	tmp.cuatrimestre,
-	tmp.anio
-GO
------ 
--- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
------
-
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento; END GO
-
-CREATE VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento AS
-SELECT top 3
-	--t.anio AS anio,
-	t.anio as Anio,
-    --t.cuatrimest,re AS cuatrimestre,
-	t.cuatrimestre as Cuatrimestre,
-    --categoria
-	pc.producto_categoria_detalle as Categoria,
-    --productos con mayor descuento aplicado a partir de promociones
-	sum(v.ticket_total_descuento_aplicado) as DescuentoAplicado
-FROM BI_REYES_DE_DATOS.BI_Venta v
-	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
-	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
-	join BI_REYES_DE_DATOS.BI_Ticket tck on v.id_ticket = tck.id_item_ticket
-	join BI_REYES_DE_DATOS.BI_Producto p on tck.id_producto = p.id_producto
-	join BI_REYES_DE_DATOS.BI_Producto_categoria pc on p.id_producto_categoria = pc.id_producto_categoria
-WHERE v.ticket_total_descuento_aplicado IS NOT NULL
-GROUP BY
-    t.anio,
-	t.cuatrimestre,
-	pc.id_producto_categoria
-ORDER BY 
-	sum(v.ticket_total_descuento_aplicado) desc;
-GO
------ 
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
 ----- 
-
 IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas; END GO
-
+BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas; END
+GO
 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
 SELECT TOP 3
     --Sucursal.nombre AS nombre_sucursal,
+    s.id_sucursal as Sucursal,
     --Medio_Pago.nombre AS nombre_medio_pago,
+    mp.medio_de_pago_clasificacion as MedioDePago,
     --YEAR(Venta.fecha_venta) AS año,
+    t.anio as Anio,
     --MONTH(Venta.fecha_venta) AS mes,
+    t.mes as Mes,
     --SUM(Venta.monto_total) AS total_pagos_cuotas
+    sum(p.pago_importe) as ImporteCuotas--kk
 FROM BI_REYES_DE_DATOS.BI_Venta v
 	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
 	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_item_ticket
-	join BI_REYES_DE_DATOS.BI_medio_de_pago mp on tk. 
-WHERE
-
+	join REYES_DE_DATOS.Ticket_X_Pago x on x.id_ticket = v.id_ticket
+    join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
+    join REYES_DE_DATOS.Tipo_medio_de_pago mp on p.id_tipo_medio_de_pago = mp.id_tipo_medio_de_pago
+where p.medio_de_pago_cuotas is not null
 GROUP BY
-
+    s.id_sucursal,
+    mp.medio_de_pago_clasificacion,
+    t.anio,
+    t.mes
 ORDER BY
-    SUM(Venta.monto_total) DESC;
+    sum(p.pago_importe) DESC;
 GO
------ ----- ----- -----
------ OTRAS VIEWS -----
------ ----- ----- -----
 ----- 
--- 3) REVISAR Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
+-- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
 ----- 
-CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre AS
+CREATE VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario AS
 SELECT
-    BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento) as RangoEtario,
-    c.caja_tipo as TipoCaja,
-    t.cuatrimestre as Cuatrimestre,
-    (SUM(v.venta_total) * 100) / (SELECT SUM(v2.venta_total)
-                                  FROM BI_REYES_DE_DATOS.BI_Venta v2
-                                  JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt2 ON v2.id_ticket = vt2.id_venta
-                                  JOIN BI_REYES_DE_DATOS.BI_Tiempo t2 ON vt2.id_tiempo = t2.id_tiempo
-                                  WHERE t2.anio = t.anio) as Porcentaje
-
+    BI_REYES_DE_DATOS.rangoEtario(c.fecha_nacimiento) AS RangoEtario,
+    AVG(q.importe_cuota) AS PromedioImporteCuota
 FROM 
-    BI_REYES_DE_DATOS.BI_Venta v
-    JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON v.id_ticket = vt.id_venta
-    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON vt.id_tiempo = t.id_tiempo
-    JOIN BI_REYES_DE_DATOS.BI_Caja c ON c.id_caja = v.id_venta
-    JOIN BI_REYES_DE_DATOS.BI_Empleado e ON v.id_empleado = e.id_empleado
+    BI_REYES_DE_DATOS.BI_Cuota q
+    JOIN BI_REYES_DE_DATOS.BI_Cliente c ON q.id_cliente = c.id_cliente
 GROUP BY
-    BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
-    c.caja_tipo,
-    t.cuatrimestre,
-    t.anio
+    BI_REYES_DE_DATOS.rangoEtario(c.fecha_nacimiento)
 ORDER BY
-    RangoEtario,
-    TipoCaja,
-    Cuatrimestre
+    RangoEtario
 GO
+
+----------------------------------------------------------------------------------------------
+
 ----- 
 -- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año
 ----- .
@@ -802,36 +877,6 @@ GROUP BY
     MONTH(v.fecha_venta),
     v.localidad,
     v.turno;
-GO
------ 
--- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
------ 
-CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios AS
-SELECT
-    s.id_sucursal AS Sucursal,
-    t.anio AS Año,
-    t.mes AS Mes,
-    t.cuatrimestre AS Cuatrimestre,
-    (COUNT(CASE 
-        WHEN e.envio_fecha_entrega <= e.envio_fecha_programada THEN 1 
-        ELSE NULL 
-    END) * 100.0) / COUNT(e.id_envio) AS PorcentajeDeCumplimiento
-FROM 
-    BI_REYES_DE_DATOS.BI_Envio e
-    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_venta = v.id_venta
-    JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
-    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
-    JOIN BI_REYES_DE_DATOS.BI_Sucursal s ON v.id_sucursal = s.id_sucursal
-GROUP BY
-    s.id_sucursal,
-    t.anio,
-    t.mes,
-    t.cuatrimestre
-ORDER BY
-    s.id_sucursal,
-    t.anio,
-    t.mes,
-    t.cuatrimestre
 GO
 ----- 
 -- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
@@ -859,32 +904,6 @@ GROUP BY
         WHEN MONTH(Envio.fecha_envio) BETWEEN 10 AND 12 THEN '4to Cuatrimestre'
     END,
     Cliente.rango_etario;
-GO
-
------ 
--- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
------ 
-CREATE VIEW BI_Promedio_Cuota_Rango_Etario AS
-SELECT
-    CASE
-        WHEN Cliente.edad < 25 THEN '< 25'
-        WHEN Cliente.edad >= 25 AND Cliente.edad <= 35 THEN '25 - 35'
-        WHEN Cliente.edad > 35 AND Cliente.edad <= 50 THEN '35 - 50'
-        ELSE '> 50'
-    END AS rango_etario,
-    AVG(Venta.monto_total / Venta.cuotas) AS promedio_importe_cuota
-FROM
-    BI_Venta AS Venta
-    JOIN BI_Cliente AS Cliente ON Venta.id_cliente = Cliente.id_cliente
-WHERE
-    Venta.cuotas > 1
-GROUP BY
-    CASE
-        WHEN Cliente.edad < 25 THEN '< 25'
-        WHEN Cliente.edad >= 25 AND Cliente.edad <= 35 THEN '25 - 35'
-        WHEN Cliente.edad > 35 AND Cliente.edad <= 50 THEN '35 - 50'
-        ELSE '> 50'
-    END;
 GO
 ----- 
 -- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
