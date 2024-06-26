@@ -1,7 +1,10 @@
 USE [GD1C2024]
 GO
------------------------------------------------------------- Borramos todas las tablas 
-/*A veces necesitaremos ejecutar esto de borrar todas las tablass dos veces (todavia no encontre el porqué de esto) "*/
+----- ----- ----- ----- ----- ----- ----- ----- 
+----- BORRAMOS TODO POR SI YA EXISTE ----- 
+----- ----- ----- ----- ----- ----- ----- ----- 
+/*A veces necesitaremos ejecutar esto dos veces (todavia no encontre el por qué de esto) "*/
+------------------------------------------------------------ Tablas 
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Ticket') begin DROP TABLE BI_REYES_DE_DATOS.BI_Ticket; end
@@ -463,12 +466,11 @@ SELECT
 FROM REYES_DE_DATOS.Ticket t
     JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
     JOIN REYES_DE_DATOS.Pago p on x.id_pago = p.id_pago;
-PRINT 'Migración de BI_Venta terminada'
+PRINT 'Migración de BI_Venta terminada' --si tira error aca todavia no se que es, no tiene sentido porque no esta vinculada con producto
 GO
 ------------------------------------------------------------ Item Ticket
 INSERT INTO BI_REYES_DE_DATOS.BI_Ticket
 (
-    --id_item_ticket INT PRIMARY KEY IDENTITY(1,1),
     ticket_numero,
     id_sucursal,
     id_tipo_comprobante,
@@ -478,7 +480,7 @@ INSERT INTO BI_REYES_DE_DATOS.BI_Ticket
     item_ticket_precio
 )
 SELECT
-	ticket_numero,
+	t.ticket_numero,
     id_sucursal,
     id_tipo_comprobante,
     id_producto,
@@ -487,7 +489,7 @@ SELECT
     item_ticket_precio
 FROM REYES_DE_DATOS.Item_Ticket t
 PRINT 'Migración de BI_Ticket terminada'
-GO
+GO --kk esto no se que error tiene
 ------------------------------------------------------------ Envio
 INSERT INTO BI_REYES_DE_DATOS.BI_Envio (
     id_ticket,
@@ -513,8 +515,6 @@ GO
 INSERT INTO BI_REYES_DE_DATOS.BI_Promocion(
 	id_promo,
 	promo_descripcion
-	--promo_fecha_inicio DATETIME NOT NULL,
-	--promo_fecha_fin DATETIME NOT NULL,
 )
 SELECT
 	id_promo,
@@ -578,10 +578,6 @@ Carmen	4-8-12
 ----- 
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual; END 
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual AS
 SELECT
     AVG(v.venta_total) AS PromedioMensual,
@@ -597,15 +593,11 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
 GROUP BY
     t.mes,
     t.anio,
-    u.id_localidad;
+    l.localidad_nombre;
 GO
 ----- 
 -- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
 ----- 
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio AS
 SELECT
 	--promedio cantidad unidades
@@ -628,10 +620,6 @@ GO
 ----- 
 -- 3) REVISAR Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
 ----- 
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre AS
 SELECT
     BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento) as RangoEtario,
@@ -661,17 +649,13 @@ GROUP BY
     t.cuatrimestre,
     t.anio
 ORDER BY
-    BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
+    1,
     c.caja_tipo,
     t.cuatrimestre;
 GO
 ----- 
 -- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año
 -----
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad AS
 SELECT
     l.localidad_nombre as Localidad,
@@ -691,15 +675,10 @@ GROUP BY
     t.mes,
     t.anio,
     BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora)
-order by l.localidad_nombre;
 GO
 ----- 
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
 ----- 
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes AS
 SELECT
 	t.anio as Año,
@@ -713,16 +692,11 @@ GROUP BY
 	t.anio,
 	t.mes
 ORDER BY
-	t.anio desc,
-	t.mes desc;
+	t.anio desc;
 GO
 ----- 
 -- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
 -----
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento AS
 SELECT top 3
 	t.anio as Anio,
@@ -739,17 +713,13 @@ WHERE v.ticket_total_descuento_aplicado IS NOT NULL
 GROUP BY
     t.anio,
 	t.cuatrimestre,
-	pc.id_producto_categoria
+	pc.producto_categoria_detalle
 ORDER BY 
 	sum(v.ticket_total_descuento_aplicado) desc;
 GO
 ----- 
 -- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
 -----
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios AS
 SELECT
     s.id_sucursal AS Sucursal,
@@ -777,17 +747,11 @@ GROUP BY
     t.anio,
     t.mes
 ORDER BY
-    s.id_sucursal,
-    t.anio,
-    t.mes;
+    s.id_sucursal asc;
 GO
 ----- 
 -- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
 ----- 
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario AS
 SELECT
     BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento) as RangoEtarioCliente,
@@ -807,9 +771,6 @@ GO
 ----- 
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
 ----- 
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio; END GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio AS
 SELECT TOP 5
     c.id_cliente as Cliente,
@@ -828,10 +789,6 @@ GO
 ----- 
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
 ----- 
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
 SELECT TOP 3
     s.id_sucursal as Sucursal,
@@ -859,10 +816,6 @@ GO
 ----- 
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
 ----- 
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario AS
 SELECT
     BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento) AS RangoEtario,
@@ -882,10 +835,6 @@ GO
 ----- 
 -- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
 ----- 
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago', 'V') IS NOT NULL 
-BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago; END
-GO
-
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago AS
 SELECT
     mp.medio_de_pago_clasificacion as MedioPago,
