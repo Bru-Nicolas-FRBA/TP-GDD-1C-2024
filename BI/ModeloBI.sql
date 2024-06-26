@@ -294,6 +294,17 @@ SELECT DISTINCT
 FROM REYES_DE_DATOS.Envio
 PRINT 'Migración de BI_Tiempo terminada';
 GO
+------------------------------------------------------------  Sucursal
+INSERT INTO BI_REYES_DE_DATOS.BI_Sucursal(
+	sucursal_domicilio,
+    sucursal_numero -- solo el numero
+)
+SELECT
+	sucursal_domicilio,
+    sucursal_numero
+FROM REYES_DE_DATOS.Sucursal
+PRINT 'Migración de BI_Sucursal terminada'
+GO
 ------------------------------------------------------------ Ubicacion
 INSERT INTO BI_REYES_DE_DATOS.BI_Ubicacion(
 	id_provincia,
@@ -307,24 +318,6 @@ SELECT
 FROM REYES_DE_DATOS.Domicilio d
 PRINT 'Migración de BI_ubicación terminada'
 GO
-------------------------------------------------------------  Sucursal
-INSERT INTO BI_REYES_DE_DATOS.BI_Sucursal(
-	sucursal_domicilio,
-    sucursal_numero -- solo el numero
-)
-SELECT
-	sucursal_domicilio,
-    sucursal_numero
-FROM REYES_DE_DATOS.Sucursal
-PRINT 'Migración de BI_Sucursal terminada'
-GO
------------------------------------------------------------- Rango Etario
-/*INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (1,0,24)
-INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (2,25,34)
-INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (3,35,49)
-INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (4,50,100)
-PRINT 'Migración de BI_rango_etario terminada';
-GO*/
 ------------------------------------------------------------ Medio De Pago
 INSERT INTO BI_REYES_DE_DATOS.BI_medio_de_pago(
     medio_de_pago_clasificacion, -- credito / debito / efectivo / etc
@@ -874,9 +867,5 @@ EXEC sp_executesql @sql;
 */
 
 /*
-Cosas finales Para revisar
-pago
-reglaXpromocion
-ticketXpago
-promocionXproducto
+venta ubicacion
 */
