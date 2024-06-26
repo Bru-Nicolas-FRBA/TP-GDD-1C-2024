@@ -46,13 +46,14 @@ IF OBJECT_ID('BI_REYES_DE_DATOS.turno', 'FN') IS NOT NULL BEGIN DROP FUNCTION BI
 IF OBJECT_ID('BI_REYES_DE_DATOS.rangoEtario ', 'FN') IS NOT NULL BEGIN DROP FUNCTION BI_REYES_DE_DATOS.rangoEtario ; END
 IF OBJECT_ID('BI_REYES_DE_DATOS.cuatrimestre', 'FN') IS NOT NULL BEGIN DROP FUNCTION BI_REYES_DE_DATOS.cuatrimestre; END
 GO
+----- ----- ----- ----- ----- ----- ----- ----- 
+----- CREACIÓN DE TABLAS-DIMENSIONES ----- 
+----- ----- ----- ----- ----- ----- ----- ----- 
 ------------------------------------------------------------
 IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'BI_REYES_DE_DATOS')
 BEGIN EXEC ('CREATE SCHEMA BI_REYES_DE_DATOS') END
 GO
------ ----- ----- ----- ----- ----- ----- ----- 
------ CREACIÓN DE TABLAS-DIMENSIONES ----- 
------ ----- ----- ----- ----- ----- ----- ----- 
+------------------------------------------------------------
 CREATE TABLE BI_REYES_DE_DATOS.BI_Tiempo(
 	id_tiempo INT PRIMARY KEY IDENTITY(1,1),
 	anio INT NOT NULL, 
@@ -135,20 +136,16 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Empleado (
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Producto (
-    id_producto INT PRIMARY KEY IDENTITY(1,1),
+    id_producto INT PRIMARY KEY,
 	producto_codigo NVARCHAR(100) NOT NULL, -- PRODUCTO_NOMBRE
     id_producto_categoria INT NOT NULL,
     id_producto_subcategoria INT NOT NULL,
-    --id_marca INT NOT NULL,
-    --producto_descripcion NVARCHAR(100) NOT NULL,
     producto_precio DECIMAL(10, 2) NOT NULL   
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Promocion(
 	id_promo INT PRIMARY KEY NOT NULL,
 	promo_descripcion VARCHAR(50) NOT NULL
-	--promo_fecha_inicio DATETIME NOT NULL,
-	--promo_fecha_fin DATETIME NOT NULL,
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket(
@@ -157,7 +154,6 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket(
     id_sucursal INT NOT NULL, 
     id_tipo_comprobante INT NOT NULL,
     id_producto INT NOT NULL,
-    id_promocion INT,
     item_ticket_cantidad INT NOT NULL,
     item_ticket_precio INT NOT NULL
 );
@@ -207,7 +203,6 @@ ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_caja_hechos_venta FO
 ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_empleado_hechos_venta FOREIGN KEY (venta_id_empleado) REFERENCES BI_REYES_DE_DATOS.BI_Empleado(id_empleado)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES BI_REYES_DE_DATOS.BI_Producto(id_producto)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_promocion FOREIGN KEY (id_promocion) REFERENCES BI_REYES_DE_DATOS.BI_Promocion(id_promo)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Envio ADD CONSTRAINT FK_id_cliente_envio FOREIGN KEY (id_cliente) REFERENCES BI_REYES_DE_DATOS.BI_Cliente(id_cliente)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Envio ADD CONSTRAINT FK_id_ticket_envio FOREIGN KEY (id_ticket) REFERENCES BI_REYES_DE_DATOS.BI_Ticket(id_ticket)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Producto ADD CONSTRAINT FK_id_producto_categoria FOREIGN KEY (id_producto_categoria) REFERENCES BI_REYES_DE_DATOS.BI_Producto_categoria(id_producto_categoria)
@@ -405,26 +400,22 @@ FROM REYES_DE_DATOS.Cliente c;
 PRINT 'Migración de BI_Cliente terminada'
 GO
 ------------------------------------------------------------ Producto
-/*
 INSERT INTO BI_REYES_DE_DATOS.BI_Producto(
+	id_producto,
 	producto_codigo, -- PRODUCTO_NOMBRE
     id_producto_categoria,
     id_producto_subcategoria,
-    --id_marca INT NOT NULL,
-    --producto_descripcion,
     producto_precio
 )
 SELECT 
-	producto_codigo,
-    id_producto_categoria,
-    id_producto_subcategoria,
-    --id_marca,
-    --producto_descripcion,
-    producto_precio
-FROM REYES_DE_DATOS.Producto;
+	p.id_producto,
+	p.producto_codigo,
+    p.id_producto_categoria,
+    p.id_producto_subcategoria,
+    p.producto_precio
+FROM REYES_DE_DATOS.Producto p;
 PRINT 'Migración de BI_Producto terminada'
 GO
-*/
 ------------------------------------------------------------ Empleado
 INSERT INTO BI_REYES_DE_DATOS.BI_Empleado (
     id_sucursal,
@@ -471,13 +462,12 @@ FROM REYES_DE_DATOS.Ticket t
 PRINT 'Migración de BI_Venta terminada' --si tira error aca todavia no se que es, no tiene sentido porque no esta vinculada con producto
 GO
 ------------------------------------------------------------ Item Ticket
-INSERT INTO BI_REYES_DE_DATOS.BI_Ticket
+INSERT INTO BI_REYES_DE_DATOS.BI_Ticket -- error no se porque
 (
     ticket_numero,
     id_sucursal,
     id_tipo_comprobante,
     id_producto,
-    id_promocion,
     item_ticket_cantidad,
     item_ticket_precio
 )
@@ -486,14 +476,13 @@ SELECT
     id_sucursal,
     id_tipo_comprobante,
     id_producto,
-    id_promocion,
     item_ticket_cantidad,
     item_ticket_precio
 FROM REYES_DE_DATOS.Item_Ticket t
 PRINT 'Migración de BI_Ticket terminada'
 GO --kk esto no se que error tiene
 ------------------------------------------------------------ Envio
-INSERT INTO BI_REYES_DE_DATOS.BI_Envio (
+INSERT INTO BI_REYES_DE_DATOS.BI_Envio ( --error no se porque
     id_ticket,
     id_cliente,
     envio_fecha_programada,
@@ -882,4 +871,12 @@ SET @sql = @sql + 'DROP SCHEMA ' + QUOTENAME(@schemaName) + ';' + CHAR(13);
 
 -- Ejecutar los comandos generados
 EXEC sp_executesql @sql;
+*/
+
+/*
+Cosas finales Para revisar
+pago
+reglaXpromocion
+ticketXpago
+promocionXproducto
 */
