@@ -802,10 +802,10 @@ SELECT
         ) * 100.0
     ) / COUNT(e.id_envio) AS PorcentajeDeCumplimiento
 FROM BI_REYES_DE_DATOS.BI_Envio e
-    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e. = v.id_venta --kk
+    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_ticket = v.id_ticket 
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
-    JOIN BI_REYES_DE_DATOS.BI_Sucursal s ON v.id_sucursal = s.id_sucursal
+    JOIN BI_REYES_DE_DATOS.BI_Sucursal s ON v.venta_id_sucursal = s.id_sucursal
 where e.envio_fecha_entrega is not null
     and e.envio_fecha_programada is not null
 GROUP BY
@@ -831,7 +831,7 @@ SELECT
     t.anio as Año,
     count(*) as CantidadEnvios
 FROM BI_REYES_DE_DATOS.BI_Envio e
-    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_venta = v.id_venta
+    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_ticket = v.id_ticket
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo 
 	JOIN BI_REYES_DE_DATOS.BI_Cliente c ON v.venta_id_cliente = c.id_cliente
