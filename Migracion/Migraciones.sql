@@ -136,8 +136,6 @@ CREATE TABLE REYES_DE_DATOS.Domicilio (
     id_provincia INT NOT NULL,
     domicilio_direccion VARCHAR(100) NOT NULL
 );
-
-
 ---
 CREATE TABLE REYES_DE_DATOS.Sucursal (
     id_sucursal INT PRIMARY KEY IDENTITY(1,1),
@@ -224,7 +222,7 @@ CREATE TABLE REYES_DE_DATOS.Pago(
 	id_pago INT PRIMARY KEY IDENTITY(1,1), 
 	id_tipo_medio_de_pago INT NOT NULL,
 	id_descuento INT NOT NULL,
-	id_cliente int not null,
+	--id_cliente int not null,
 	pago_fecha DATETIME NOT NULL,
 	pago_importe DECIMAL(15,2) NOT NULL,
 	pago_numero_tarjeta VARCHAR(20), -- SON OPCIONALES PORQUE PUEDE PAGAR EN EFECTIVO
@@ -276,7 +274,7 @@ ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT FK_Regla_X_Promocion
 ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT FK_Regla_X_Promocion_Regla FOREIGN KEY (id_regla) REFERENCES REYES_DE_DATOS.Regla(id_regla)
 
 ALTER TABLE REYES_DE_DATOS.Pago ADD CONSTRAINT FK_id_descuento FOREIGN KEY (id_descuento) REFERENCES REYES_DE_DATOS.Descuento(descuento_codigo)
-ALTER TABLE REYES_DE_DATOS.Pago ADD CONSTRAINT FK_id_cliente FOREIGN KEY (id_cliente) REFERENCES REYES_DE_DATOS.Cliente(id_cliente)
+--ALTER TABLE REYES_DE_DATOS.Pago ADD CONSTRAINT FK_id_cliente FOREIGN KEY (id_cliente) REFERENCES REYES_DE_DATOS.Cliente(id_cliente)
 --ALTER TABLE REYES_DE_DATOS.Pago ADD CONSTRAINT FK_id_tipo_medio_pago FOREIGN KEY (id_tipo_medio_pago) REFERENCES REYES_DE_DATOS.Tipo_medio_de_pago(id_tipo_medio_pago)
 
 ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES REYES_DE_DATOS.Producto(id_producto)
@@ -534,7 +532,7 @@ INSERT INTO REYES_DE_DATOS.Empleado(
 		m.EMPLEADO_APELLIDO,
 		m.EMPLEADO_DNI,
 		m.EMPLEADO_FECHA_REGISTRO,
-		m.CLIENTE_FECHA_REGISTRO,
+		m.EMPLEADO_FECHA_NACIMIENTO,
 		m.EMPLEADO_MAIL,
 		m.EMPLEADO_TELEFONO
 	FROM gd_esquema.Maestra m
@@ -609,7 +607,7 @@ INSERT INTO REYES_DE_DATOS.Envio(
 	envio_costo
 	)
 	SELECT 
-		m.TICKET_NUMERO,
+		t.id_ticket,
 		c.id_cliente,
 		m.ENVIO_FECHA_PROGRAMADA,
 		m.ENVIO_HORA_INICIO,
@@ -619,6 +617,7 @@ INSERT INTO REYES_DE_DATOS.Envio(
 		m.ENVIO_COSTO
 	FROM gd_esquema.Maestra m
 		JOIN REYES_DE_DATOS.Cliente c ON m.CLIENTE_MAIL = c.cliente_mail
+		join REYES_DE_DATOS.Ticket t on m.TICKET_NUMERO+m.TICKET_SUBTOTAL_PRODUCTOS+m.TICKET_TOTAL_TICKET = t.ticket_numero+t.ticket_subtotal+t.ticket_total
 	WHERE m.TICKET_NUMERO IS NOT NULL
 		AND m.ENVIO_HORA_INICIO IS NOT NULL    
 PRINT 'Migración de envio terminada';
@@ -653,7 +652,6 @@ PRINT 'Migración de item ticket terminada';
 INSERT INTO REYES_DE_DATOS.Pago(
 	id_tipo_medio_de_pago,
 	id_descuento,
-	id_cliente,
 	pago_fecha,
 	pago_importe,
 	pago_numero_tarjeta,
@@ -661,10 +659,9 @@ INSERT INTO REYES_DE_DATOS.Pago(
 	medio_de_pago_fecha_vencimiento,
 	medio_de_pago_descuento_aplicado
 	)
-	SELECT DISTINCT
+	SELECT
 		mp.id_tipo_medio_pago,
 		m.DESCUENTO_CODIGO,
-		c.id_cliente,
 		m.PAGO_FECHA,
 		m.PAGO_IMPORTE,
 		m.PAGO_TARJETA_NRO,
@@ -673,7 +670,6 @@ INSERT INTO REYES_DE_DATOS.Pago(
 		m.PAGO_DESCUENTO_APLICADO
 	FROM gd_esquema.Maestra m
 		JOIN REYES_DE_DATOS.Tipo_medio_de_pago mp ON m.PAGO_MEDIO_PAGO = mp.medio_de_pago_detalle
-		join REYES_DE_DATOS.Cliente c on m.CLIENTE_DNI=c.cliente_dni AND m.cliente_mail = m.CLIENTE_MAIL
 PRINT 'Migración de Pago terminada'; 
 
 INSERT INTO REYES_DE_DATOS.Regla_x_Promocion(
@@ -787,3 +783,11 @@ ELSE
 		RAISERROR ('Error al migrar una o más tablas', 14, 1)
 	END
 GO
+
+/*
+Cosas finales Para revisar
+pago
+reglaXpromocion
+ticketXpago
+promocionXproducto
+*/
