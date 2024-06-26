@@ -479,6 +479,20 @@ FROM gd_esquema.Maestra m
 	JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.CLIENTE_LOCALIDAD
 	JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.CLIENTE_PROVINCIA
 WHERE CLIENTE_DOMICILIO IS NOT NULL;
+
+INSERT INTO REYES_DE_DATOS.Domicilio (
+	domicilio_direccion,
+	id_localidad,
+	id_provincia
+)
+SELECT DISTINCT
+	m.SUCURSAL_DIRECCION,
+	l.id_localidad,
+	p.id_provincia
+FROM gd_esquema.Maestra m
+	JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.CLIENTE_LOCALIDAD
+	JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.CLIENTE_PROVINCIA
+WHERE SUCURSAL_DIRECCION IS NOT NULL;
 PRINT 'Migracion de Domicilio de cliente terminada';
 
 INSERT INTO REYES_DE_DATOS.Sucursal (
