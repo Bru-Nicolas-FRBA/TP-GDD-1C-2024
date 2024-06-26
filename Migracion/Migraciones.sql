@@ -490,8 +490,8 @@ SELECT DISTINCT
 	l.id_localidad,
 	p.id_provincia
 FROM gd_esquema.Maestra m
-	JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.CLIENTE_LOCALIDAD
-	JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.CLIENTE_PROVINCIA
+	JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.SUCURSAL_LOCALIDAD
+	JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.SUCURSAL_PROVINCIA
 WHERE SUCURSAL_DIRECCION IS NOT NULL;
 PRINT 'Migracion de Domicilio de cliente terminada';
 
