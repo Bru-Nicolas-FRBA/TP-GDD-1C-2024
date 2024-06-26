@@ -713,6 +713,7 @@ INSERT INTO REYES_DE_DATOS.Ticket_X_Pago(
 PRINT 'Migración de ticket_x_pago terminada';
 
 --esta tiene que tardar mucho porque a cada item le pertenece una promocion (esto nos come 30s de ejecucion como minimo)
+/*
 INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(
 	id_promocion,
 	id_item_ticket
@@ -736,6 +737,7 @@ INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(
 		m.TICKET_NUMERO IS NOT NULL
 		AND m.PROMO_CODIGO IS NOT NULL 
 PRINT 'Migración de promo_x_item_ticket terminada';
+*/
 
 INSERT INTO REYES_DE_DATOS.Promocion_X_Producto(
 	id_promocion,
