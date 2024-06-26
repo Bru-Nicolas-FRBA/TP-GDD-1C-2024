@@ -1,9 +1,11 @@
 USE [GD1C2024]
 GO
 ----- ----- ----- ----- ----- ----- ----- ----- 
------ BORRAMOS TODO POR SI YA EXISTE ----- 
+----- BORRAR ----- 
 ----- ----- ----- ----- ----- ----- ----- ----- 
-/*A veces necesitaremos ejecutar esto dos veces (todavia no encontre el por qué de esto) "*/
+
+/*A veces necesitaremos ejecutar "BORRAR" dos veces (todavia no encontre el por qué de esto)*/
+
 ------------------------------------------------------------ Tablas 
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo; end
@@ -647,11 +649,7 @@ GROUP BY
     BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
     c.caja_tipo,
     t.cuatrimestre,
-    t.anio
-ORDER BY
-    1,
-    c.caja_tipo,
-    t.cuatrimestre;
+    t.anio;
 GO
 ----- 
 -- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año
@@ -674,7 +672,7 @@ GROUP BY
     l.localidad_nombre,
     t.mes,
     t.anio,
-    BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora)
+    BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora);
 GO
 ----- 
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
@@ -690,9 +688,7 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
 WHERE v.ticket_total_descuento_aplicado is not null
 GROUP BY
 	t.anio,
-	t.mes
-ORDER BY
-	t.anio desc;
+	t.mes;
 GO
 ----- 
 -- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
@@ -713,9 +709,7 @@ WHERE v.ticket_total_descuento_aplicado IS NOT NULL
 GROUP BY
     t.anio,
 	t.cuatrimestre,
-	pc.producto_categoria_detalle
-ORDER BY 
-	sum(v.ticket_total_descuento_aplicado) desc;
+	pc.producto_categoria_detalle;
 GO
 ----- 
 -- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
@@ -745,9 +739,7 @@ where e.envio_fecha_entrega is not null
 GROUP BY
     s.id_sucursal,
     t.anio,
-    t.mes
-ORDER BY
-    s.id_sucursal asc;
+    t.mes;
 GO
 ----- 
 -- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
@@ -766,7 +758,7 @@ FROM BI_REYES_DE_DATOS.BI_Envio e
 GROUP BY
     BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
     t.cuatrimestre,
-    t.anio
+    t.anio;
 GO
 ----- 
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
@@ -782,9 +774,7 @@ FROM BI_REYES_DE_DATOS.BI_Envio e
 	JOIN REYES_DE_DATOS.Localidad l on u.id_localidad = l.id_localidad
 GROUP BY
     c.id_cliente,
-	l.localidad_nombre
-ORDER BY
-    sum(e.envio_costo) DESC;
+	l.localidad_nombre;
 GO
 ----- 
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
@@ -809,9 +799,7 @@ GROUP BY
     s.id_sucursal,
     mp.medio_de_pago_clasificacion,
     t.anio,
-    t.mes
-ORDER BY
-    sum(p.pago_importe) DESC;
+    t.mes;
 GO
 ----- 
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
@@ -828,9 +816,7 @@ FROM BI_REYES_DE_DATOS.BI_Envio e
     join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
     JOIN BI_REYES_DE_DATOS.BI_Cliente c ON e.id_cliente = c.id_cliente
 GROUP BY
-    BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento)
-ORDER BY
-    AVG(p.pago_importe) desc;
+    BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento);
 GO
 ----- 
 -- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
