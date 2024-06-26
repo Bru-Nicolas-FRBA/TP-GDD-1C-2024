@@ -552,13 +552,7 @@ PRINT 'Migración de BI_hechos_venta_ubicacion terminada'
 GO
 ----- ----- ----- ----- ----- 
 ----- CREACION DE VIEWS ----- 
------ ----- ----- ----- ----- 
-/*
-Bru		1-5-9
-Martin	2-6-10
-Alan	3-7-11
-Carmen	4-8-12
-*/
+----- ----- ----- ----- -----
 ----- 
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
