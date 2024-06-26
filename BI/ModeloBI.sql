@@ -1,25 +1,26 @@
 USE [GD1C2024]
 GO
------------------------------------------------------------- Borramos todas las tablas
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_Tiempo; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_Ubicacion; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Sucursal') begin DROP TABLE BI_REYES_DE_DATOS.BI_Sucursal; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Rango_Etario')begin DROP TABLE BI_REYES_DE_DATOS.BI_Rango_Etario; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_turno') begin DROP TABLE BI_REYES_DE_DATOS.BI_turno; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_medio_de_pago') begin DROP TABLE BI_REYES_DE_DATOS.BI_medio_de_pago; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto_categoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto_categoria; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto_subcategoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto_subcategoria; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Caja') begin DROP TABLE BI_REYES_DE_DATOS.BI_Caja; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Descuento') begin DROP TABLE BI_REYES_DE_DATOS.BI_Descuento; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Cliente') begin DROP TABLE BI_REYES_DE_DATOS.BI_Cliente; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Empleado') begin DROP TABLE BI_REYES_DE_DATOS.BI_Empleado; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Promocion') begin DROP TABLE BI_REYES_DE_DATOS.BI_Promocion; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Ticket') begin DROP TABLE BI_REYES_DE_DATOS.BI_Ticket; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Envio') begin DROP TABLE BI_REYES_DE_DATOS.BI_Envio; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Venta') begin DROP TABLE BI_REYES_DE_DATOS.BI_Venta; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo; end
+------------------------------------------------------------ Borramos todas las tablas 
+/*A veces necesitaremos ejecutar esto de borrar todas las tablass dos veces (todavia no encontre el porqué de esto) "*/
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Ticket') begin DROP TABLE BI_REYES_DE_DATOS.BI_Ticket; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto_subcategoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto_subcategoria; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto_categoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto_categoria; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Cliente') begin DROP TABLE BI_REYES_DE_DATOS.BI_Cliente; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Descuento') begin DROP TABLE BI_REYES_DE_DATOS.BI_Descuento; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_medio_de_pago') begin DROP TABLE BI_REYES_DE_DATOS.BI_medio_de_pago; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Rango_Etario')begin DROP TABLE BI_REYES_DE_DATOS.BI_Rango_Etario; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Venta') begin DROP TABLE BI_REYES_DE_DATOS.BI_Venta; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Caja') begin DROP TABLE BI_REYES_DE_DATOS.BI_Caja; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Envio') begin DROP TABLE BI_REYES_DE_DATOS.BI_Envio; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Promocion') begin DROP TABLE BI_REYES_DE_DATOS.BI_Promocion; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Empleado') begin DROP TABLE BI_REYES_DE_DATOS.BI_Empleado; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_turno') begin DROP TABLE BI_REYES_DE_DATOS.BI_turno; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Sucursal') begin DROP TABLE BI_REYES_DE_DATOS.BI_Sucursal; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_Ubicacion; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_Tiempo; end
 GO
 ------------------------------------------------------------ Borramos todas las vistas
 IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL  BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual; END 
@@ -41,8 +42,8 @@ IF OBJECT_ID('BI_REYES_DE_DATOS.rangoEtario ', 'FN') IS NOT NULL BEGIN DROP FUNC
 IF OBJECT_ID('BI_REYES_DE_DATOS.cuatrimestre', 'FN') IS NOT NULL BEGIN DROP FUNCTION BI_REYES_DE_DATOS.cuatrimestre; END
 GO
 ------------------------------------------------------------
-IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'REYES_DE_DATOS')
-BEGIN EXEC ('CREATE SCHEMA REYES_DE_DATOS') END
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'BI_REYES_DE_DATOS')
+BEGIN EXEC ('CREATE SCHEMA BI_REYES_DE_DATOS') END
 GO
 ----- ----- ----- ----- ----- ----- ----- ----- 
 ----- CREACIÓN DE TABLAS-DIMENSIONES ----- 
@@ -63,8 +64,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Ubicacion( -- == Domicilio
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Sucursal(
 	id_sucursal INT PRIMARY KEY IDENTITY(1,1),
-	sucursal_id_supermercado INT NOT NULL,
-    sucursal_domicilio VARCHAR(100) NOT NULL,
+	sucursal_domicilio VARCHAR(100) NOT NULL,
     sucursal_numero VARCHAR(50) NOT NULL -- solo el numero
 );
 -----
@@ -115,8 +115,8 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Descuento (
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Cliente (
     id_cliente INT PRIMARY KEY IDENTITY(1,1),
-    cliente_nombre VARCHAR(20) not null,
-    cliente_apellido VARCHAR(20) not null,
+    cliente_nombre VARCHAR(50) not null,
+    cliente_apellido VARCHAR(50) not null,
 	cliente_id_domicilio int not null,
     cliente_fecha_nacimiento date not null
 );
@@ -150,8 +150,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Promocion(
 	--promo_fecha_fin DATETIME NOT NULL,
 );
 -----
-CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket
- (
+CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket(
     id_ticket INT PRIMARY KEY IDENTITY(1,1),
     ticket_numero VARCHAR(50) NOT NULL,
     id_sucursal INT NOT NULL, 
@@ -167,10 +166,9 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Envio (
     id_ticket int not null,
 	id_cliente INT NOT NULL,
     envio_fecha_programada DATETIME NULL,
-    --envio_horario_inicio INT NOT NULL,
-    --envio_horario_fin INT NOT NULL,
+    envio_horario_inicio INT NOT NULL,
+    envio_horario_fin INT NOT NULL,
     envio_fecha_entrega DATETIME NOT NULL,
-    --envio_estado VARCHAR(50) NOT NULL,
     envio_costo DECIMAL(10, 2) NOT NULL,
 );
 ----- /*Ticket*/
@@ -182,45 +180,40 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
     venta_id_sucursal INT NOT NULL,
     venta_id_caja INT NOT NULL,
     venta_id_empleado INT NOT NULL,
-    venta_id_cliente int not null,
     ticket_fecha_hora DATE NOT NULl,
     venta_total DECIMAL(10, 2) NOT NULL,
     ticket_total_descuento_aplicado DECIMAL(10, 2),
-	ticket_total_descuento_aplicado_mp DECIMAL(10, 2),
-    ticket_monto_total_envio DECIMAL(10, 2)
+	ticket_monto_total_envio DECIMAL(10, 2)
 );
-
+----- hechos
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo (
+	id_venta INT,
+    ticket_fecha_hora DATETIME,
+    envio_fecha_entrega DATE,
+    id_tiempo INT FOREIGN KEY (id_tiempo) REFERENCES BI_REYES_DE_DATOS.BI_Tiempo(id_tiempo)
+);
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion (
+    id_venta INT PRIMARY KEY FOREIGN KEY (id_venta) REFERENCES BI_REYES_DE_DATOS.BI_Venta(id_venta),
+    id_ubicacion INT FOREIGN KEY (id_ubicacion) REFERENCES BI_REYES_DE_DATOS.BI_Ubicacion(id_ubicacion),
+    id_provincia INT NOT NULL,
+    id_localidad INT NOT NULL,
+);
 ------------------------------------------------------------------------------------------------
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
 ------------------------------------------------------------------------------------------------
-
-ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_tipo_comprobante_hechos_venta FOREIGN KEY (id_tipo_comprobante) REFERENCES BI_REYES_DE_DATOS.BI_Tipo_Comprobante(id_tipo_comprobante)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_sucursal_hechos_venta FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_caja_hechos_venta FOREIGN KEY (id_caja) REFERENCES BI_REYES_DE_DATOS.BI_Caja(id_caja)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_empleado_hechos_venta FOREIGN KEY (id_empleado) REFERENCES BI_REYES_DE_DATOS.BI_Empleado(id_empleado)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_cliente_venta FOREIGN KEY (id_cliente) REFERENCES BI_REYES_DE_DATOS.BI_Cliente(id_cliente)
-
-ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket
- ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES BI_REYES_DE_DATOS.BI_Producto(id_producto)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket
- ADD CONSTRAINT FK_id_tipo_comprobante FOREIGN KEY (id_tipo_comprobante) REFERENCES BI_REYES_DE_DATOS.BI_Tipo_Comprobante(id_tipo_comprobante)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket
- ADD CONSTRAINT FK_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket
- ADD CONSTRAINT FK_id_promocion FOREIGN KEY (id_promocion) REFERENCES BI_REYES_DE_DATOS.BI_Promocion(id_promo)
-
+ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_sucursal_hechos_venta FOREIGN KEY (venta_id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_caja_hechos_venta FOREIGN KEY (venta_id_caja) REFERENCES BI_REYES_DE_DATOS.BI_Caja(id_caja)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_empleado_hechos_venta FOREIGN KEY (venta_id_empleado) REFERENCES BI_REYES_DE_DATOS.BI_Empleado(id_empleado)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES BI_REYES_DE_DATOS.BI_Producto(id_producto)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_promocion FOREIGN KEY (id_promocion) REFERENCES BI_REYES_DE_DATOS.BI_Promocion(id_promo)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Envio ADD CONSTRAINT FK_id_cliente_envio FOREIGN KEY (id_cliente) REFERENCES BI_REYES_DE_DATOS.BI_Cliente(id_cliente)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Envio ADD CONSTRAINT FK_id_ticket_envio FOREIGN KEY (id_ticket) REFERENCES BI_REYES_DE_DATOS.BI_Ticket(id_ticket)
-
 ALTER TABLE BI_REYES_DE_DATOS.BI_Producto ADD CONSTRAINT FK_id_producto_categoria FOREIGN KEY (id_producto_categoria) REFERENCES BI_REYES_DE_DATOS.BI_Producto_categoria(id_producto_categoria)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Producto ADD CONSTRAINT FK_id_producto_subcategoria FOREIGN KEY (id_producto_subcategoria) REFERENCES BI_REYES_DE_DATOS.BI_Producto_subcategoria(id_producto_subcategoria)
-
 ALTER TABLE BI_REYES_DE_DATOS.BI_Empleado ADD CONSTRAINT FK_id_sucursal_empleado FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
-
 ALTER TABLE BI_REYES_DE_DATOS.BI_Cliente ADD CONSTRAINT FK_cliente_id_domicilio FOREIGN KEY (cliente_id_domicilio) REFERENCES BI_REYES_DE_DATOS.BI_Ubicacion(id_ubicacion)
-
 GO
-
 ----- ----- ----- ----- ----- ----
 -----  CREACIÓN DE FUNCIONES -----
 ----- ----- ----- ----- ----- ----- 
@@ -320,24 +313,22 @@ PRINT 'Migración de BI_ubicación terminada'
 GO
 ------------------------------------------------------------  Sucursal
 INSERT INTO BI_REYES_DE_DATOS.BI_Sucursal(
-	--sucursal_id_supermercado INT NOT NULL,
-    sucursal_domicilio,
+	sucursal_domicilio,
     sucursal_numero -- solo el numero
 )
 SELECT
-	--sucursal_id_supermercado,
-    sucursal_domicilio,
+	sucursal_domicilio,
     sucursal_numero
 FROM REYES_DE_DATOS.Sucursal
 PRINT 'Migración de BI_Sucursal terminada'
 GO
 ------------------------------------------------------------ Rango Etario
-INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (1,0,24)
+/*INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (1,0,24)
 INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (2,25,34)
 INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (3,35,49)
 INSERT INTO BI_REYES_DE_DATOS.BI_Rango_Etario (id_rango_etario, rango_etario_inicio, rango_etario_final) VALUES (4,50,100)
 PRINT 'Migración de BI_rango_etario terminada';
-GO
+GO*/
 ------------------------------------------------------------ Medio De Pago
 INSERT INTO BI_REYES_DE_DATOS.BI_medio_de_pago(
     medio_de_pago_clasificacion, -- credito / debito / efectivo / etc
@@ -413,6 +404,7 @@ FROM REYES_DE_DATOS.Cliente c;
 PRINT 'Migración de BI_Cliente terminada'
 GO
 ------------------------------------------------------------ Producto
+/*
 INSERT INTO BI_REYES_DE_DATOS.BI_Producto(
 	producto_codigo, -- PRODUCTO_NOMBRE
     id_producto_categoria,
@@ -431,6 +423,7 @@ SELECT
 FROM REYES_DE_DATOS.Producto;
 PRINT 'Migración de BI_Producto terminada'
 GO
+*/
 ------------------------------------------------------------ Ticket / Venta -- TITO
 INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
 	id_ticket,
@@ -439,12 +432,10 @@ INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
     venta_id_sucursal,
     venta_id_caja,
     venta_id_empleado,
-    venta_id_cliente,
     ticket_fecha_hora,
     venta_total,
     ticket_total_descuento_aplicado,
-	ticket_total_descuento_aplicado_mp,
-    ticket_monto_total_envio
+	ticket_monto_total_envio
 )
 SELECT
 	t.id_ticket,
@@ -453,13 +444,10 @@ SELECT
     id_sucursal,
     id_caja,
     id_empleado,
-    p.id_cliente,
     ticket_fecha_hora,
-    ticket_subtotal,
     ticket_total,
     t.ticket_total_descuento_aplicado,
-	ticket_total_descuento_aplicado_mp,
-    ticket_monto_total_envio
+	ticket_monto_total_envio
 FROM REYES_DE_DATOS.Ticket t
     JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
     JOIN REYES_DE_DATOS.Pago p on x.id_pago = p.id_pago;
@@ -470,21 +458,19 @@ INSERT INTO BI_REYES_DE_DATOS.BI_Envio (
     id_ticket,
     id_cliente,
     envio_fecha_programada,
-    --envio_horario_inicio INT NOT NULL,
-    --envio_horario_fin INT NOT NULL,
+    envio_horario_inicio,
+    envio_horario_fin,
     envio_fecha_entrega,
-    --envio_estado VARCHAR(50) NOT NULL,
     envio_costo
 )
 SELECT
-	e.id_ticket
+	e.id_ticket,
     id_cliente,
-    envio_fecha_programada,
-    --envio_horario_inicio,
-    --envio_horario_fin,
-    envio_fecha_entrega,
-    --envio_estado,
-    envio_costo
+    e.envio_fecha_programada,
+    e.envio_horario_inicio,
+    e.envio_horario_fin,
+    e.envio_fecha_entrega,
+    e.envio_costo
 FROM REYES_DE_DATOS.Envio e
 PRINT 'Migración de BI_Envio terminada'
 GO
@@ -549,13 +535,6 @@ GO
 ----- CREACION DE HECHOS ----- 
 ----- ----- ----- ----- -----
 ------------------------------------------------------------ hechos venta tiempo
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo (
-	id_venta INT,
-    ticket_fecha_hora DATETIME,
-    envio_fecha_entrega DATE,
-    id_tiempo INT FOREIGN KEY (id_tiempo) REFERENCES BI_REYES_DE_DATOS.BI_Tiempo(id_tiempo)
-);
-
 INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_tiempo (
 	id_venta,
     ticket_fecha_hora,
@@ -580,12 +559,6 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
 PRINT 'Migración de BI_hechos_venta_tiempo terminada'
 GO
 ------------------------------------------------------------ hechos venta ubicacion
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion (
-    id_venta INT PRIMARY KEY FOREIGN KEY (id_venta) REFERENCES BI_REYES_DE_DATOS.BI_Venta(id_venta),
-    id_ubicacion INT FOREIGN KEY (id_ubicacion) REFERENCES BI_REYES_DE_DATOS.BI_Ubicacion(id_ubicacion),
-    id_provincia INT NOT NULL,
-    id_localidad INT NOT NULL,
-);
 INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion (
     id_venta,
     id_ubicacion,
@@ -769,7 +742,7 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
 	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
 	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
 	join BI_REYES_DE_DATOS.BI_Ticket tck on v.id_ticket = tck.id_ticket
-	join BI_REYES_DE_DATOS.BI_Producto p on tck.id_producto = p.id_producto
+	join REYES_DE_DATOS.Producto p on tck.id_producto = p.id_producto
 	join BI_REYES_DE_DATOS.BI_Producto_categoria pc on p.id_producto_categoria = pc.id_producto_categoria
 WHERE v.ticket_total_descuento_aplicado IS NOT NULL
 GROUP BY
@@ -826,7 +799,7 @@ GO
 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario AS
 SELECT
-    BI_REYES_DE_DATOS.rangoEtario(c.) as RangoEtarioCliente,
+    BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento) as RangoEtarioCliente,
     t.cuatrimestre as Cuatrimeste,
     t.anio as Año,
     count(*) as CantidadEnvios
@@ -834,7 +807,7 @@ FROM BI_REYES_DE_DATOS.BI_Envio e
     JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_ticket = v.id_ticket
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo 
-	JOIN BI_REYES_DE_DATOS.BI_Cliente c ON v.venta_id_cliente = c.id_cliente
+	JOIN BI_REYES_DE_DATOS.BI_Cliente c ON e.id_cliente = c.id_cliente
 GROUP BY
     BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
     t.cuatrimestre,
@@ -903,12 +876,13 @@ CREATE VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario AS
 SELECT
     BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento) AS RangoEtario,
     AVG(p.pago_importe) AS PromedioImporteCuota
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_Envio e
+    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_ticket = v.id_ticket
 	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
 	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_ticket
 	join REYES_DE_DATOS.Ticket_X_Pago x on x.id_ticket = v.id_ticket
     join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
-    JOIN BI_REYES_DE_DATOS.BI_Cliente c ON p.id_cliente = c.id_cliente
+    JOIN BI_REYES_DE_DATOS.BI_Cliente c ON e.id_cliente = c.id_cliente
 GROUP BY
     BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento)
 ORDER BY
@@ -939,3 +913,47 @@ GROUP BY
     t.anio,
     t.cuatrimestre;
 GO
+-------------------------------------------------------------------
+----- BORRAR TODO ESQUEMA POR LAS DUDAS -----
+-------------------------------------------------------------------
+/*
+DECLARE @schemaName NVARCHAR(255) = 'BI_REYES_DE_DATOS';
+DECLARE @sql NVARCHAR(MAX) = '';
+
+-- Generar comandos DROP para todas las restricciones de clave foránea
+SELECT @sql = @sql + 'ALTER TABLE ' + QUOTENAME(s.name) + '.' + QUOTENAME(t.name) + ' DROP CONSTRAINT ' + QUOTENAME(fk.name) + ';' + CHAR(13)
+FROM sys.foreign_keys fk
+INNER JOIN sys.tables t ON fk.parent_object_id = t.object_id
+INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE s.name = @schemaName;
+
+-- Generar comandos DROP para todas las tablas
+SELECT @sql = @sql + 'DROP TABLE ' + QUOTENAME(s.name) + '.' + QUOTENAME(t.name) + ';' + CHAR(13)
+FROM sys.tables t
+INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE s.name = @schemaName;
+
+-- Generar comandos DROP para todas las vistas
+SELECT @sql = @sql + 'DROP VIEW ' + QUOTENAME(s.name) + '.' + QUOTENAME(v.name) + ';' + CHAR(13)
+FROM sys.views v
+INNER JOIN sys.schemas s ON v.schema_id = s.schema_id
+WHERE s.name = @schemaName;
+
+-- Generar comandos DROP para todas las funciones
+SELECT @sql = @sql + 'DROP FUNCTION ' + QUOTENAME(s.name) + '.' + QUOTENAME(f.name) + ';' + CHAR(13)
+FROM sys.objects f
+INNER JOIN sys.schemas s ON f.schema_id = s.schema_id
+WHERE s.name = @schemaName AND f.type IN ('FN', 'IF', 'TF');
+
+-- Generar comandos DROP para todos los procedimientos almacenados
+SELECT @sql = @sql + 'DROP PROCEDURE ' + QUOTENAME(s.name) + '.' + QUOTENAME(p.name) + ';' + CHAR(13)
+FROM sys.procedures p
+INNER JOIN sys.schemas s ON p.schema_id = s.schema_id
+WHERE s.name = @schemaName;
+
+-- Generar comandos DROP para el esquema
+SET @sql = @sql + 'DROP SCHEMA ' + QUOTENAME(@schemaName) + ';' + CHAR(13);
+
+-- Ejecutar los comandos generados
+EXEC sp_executesql @sql;
+*/
