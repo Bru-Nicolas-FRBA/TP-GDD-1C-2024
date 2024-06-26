@@ -126,11 +126,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Empleado (
     id_sucursal INT NOT NULL,
     empleado_nombre VARCHAR(15) NOT NULL,
     empleado_apellido VARCHAR(30) NOT NULL,
-    --empleado_dni INT NOT NULL,
-    empleado_fecha_registro DATE not null,
     empleado_fecha_nacimiento DATE not null
-    --empleado_email VARCHAR(30) NOT NULL,
-    --empleado_telefono DECIMAL(8, 0) NOT NULL
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Producto (
@@ -424,6 +420,22 @@ FROM REYES_DE_DATOS.Producto;
 PRINT 'Migración de BI_Producto terminada'
 GO
 */
+------------------------------------------------------------ Empleado
+INSERT INTO BI_REYES_DE_DATOS.BI_Empleado (
+    id_sucursal,
+    empleado_nombre,
+    empleado_apellido,
+    empleado_fecha_nacimiento
+    
+)
+SELECT
+	id_sucursal,
+    empleado_nombre,
+    empleado_apellido,
+	empleado_fecha_nacimiento
+FROM REYES_DE_DATOS.Empleado
+PRINT 'Migración de BI_Empleado terminada'
+GO
 ------------------------------------------------------------ Ticket / Venta -- TITO
 INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
 	id_ticket,
@@ -453,61 +465,6 @@ FROM REYES_DE_DATOS.Ticket t
     JOIN REYES_DE_DATOS.Pago p on x.id_pago = p.id_pago;
 PRINT 'Migración de BI_Venta terminada'
 GO
------------------------------------------------------------- Envio
-INSERT INTO BI_REYES_DE_DATOS.BI_Envio (
-    id_ticket,
-    id_cliente,
-    envio_fecha_programada,
-    envio_horario_inicio,
-    envio_horario_fin,
-    envio_fecha_entrega,
-    envio_costo
-)
-SELECT
-	e.id_ticket,
-    id_cliente,
-    e.envio_fecha_programada,
-    e.envio_horario_inicio,
-    e.envio_horario_fin,
-    e.envio_fecha_entrega,
-    e.envio_costo
-FROM REYES_DE_DATOS.Envio e
-PRINT 'Migración de BI_Envio terminada'
-GO
------------------------------------------------------------- Promocion
-INSERT INTO BI_REYES_DE_DATOS.BI_Promocion(
-	id_promo,
-	promo_descripcion
-	--promo_fecha_inicio DATETIME NOT NULL,
-	--promo_fecha_fin DATETIME NOT NULL,
-)
-SELECT
-	id_promo,
-	promo_descripcion
-FROM REYES_DE_DATOS.Promocion
-PRINT 'Migración de BI_Promo terminada'
-GO
------------------------------------------------------------- Empleado
-INSERT INTO BI_REYES_DE_DATOS.BI_Empleado (
-    id_sucursal,
-    empleado_nombre,
-    empleado_apellido,
-    --empleado_dni INT NOT NULL,
-    empleado_fecha_registro,
-    empleado_fecha_nacimiento
-    --empleado_email VARCHAR(30) NOT NULL,
-    --empleado_telefono DECIMAL(8, 0) NOT NULL
-)
-SELECT
-	id_sucursal,
-    empleado_nombre,
-    empleado_apellido,
-    --empleado_dni INT NOT NULL,
-    empleado_fecha_registro,
-	empleado_fecha_nacimiento
-FROM REYES_DE_DATOS.Empleado
-PRINT 'Migración de BI_Empleado terminada'
-GO
 ------------------------------------------------------------ Item Ticket
 INSERT INTO BI_REYES_DE_DATOS.BI_Ticket
 (
@@ -530,6 +487,40 @@ SELECT
     item_ticket_precio
 FROM REYES_DE_DATOS.Item_Ticket t
 PRINT 'Migración de BI_Ticket terminada'
+GO
+------------------------------------------------------------ Envio
+INSERT INTO BI_REYES_DE_DATOS.BI_Envio (
+    id_ticket,
+    id_cliente,
+    envio_fecha_programada,
+    envio_horario_inicio,
+    envio_horario_fin,
+    envio_fecha_entrega,
+    envio_costo
+)
+SELECT
+	e.id_ticket,
+    e.id_cliente,
+    e.envio_fecha_programada,
+    e.envio_horario_inicio,
+    e.envio_horario_fin,
+    e.envio_fecha_entrega,
+    e.envio_costo
+FROM REYES_DE_DATOS.Envio e
+PRINT 'Migración de BI_Envio terminada'
+GO
+------------------------------------------------------------ Promocion
+INSERT INTO BI_REYES_DE_DATOS.BI_Promocion(
+	id_promo,
+	promo_descripcion
+	--promo_fecha_inicio DATETIME NOT NULL,
+	--promo_fecha_fin DATETIME NOT NULL,
+)
+SELECT
+	id_promo,
+	promo_descripcion
+FROM REYES_DE_DATOS.Promocion
+PRINT 'Migración de BI_Promo terminada'
 GO
 ----- ----- ----- ----- ----- 
 ----- CREACION DE HECHOS ----- 
