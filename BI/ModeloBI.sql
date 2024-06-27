@@ -1,11 +1,8 @@
 USE [GD1C2024]
 GO
 ----- ----- ----- ----- ----- ----- ----- ----- 
------ BORRAR ----- 
+----- BORRAR -----  /*A veces necesitaremos ejecutar "BORRAR" dos veces (todavia no encontramos el por qué de esto)*/
 ----- ----- ----- ----- ----- ----- ----- ----- 
-
-/*A veces necesitaremos ejecutar "BORRAR" dos veces (todavia no encontre el por qué de esto)*/
-
 ------------------------------------------------------------ Tablas 
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo; end
@@ -221,14 +218,15 @@ BEGIN
     DECLARE @turno VARCHAR(50);
     SELECT @turno = 
         CASE 
-            WHEN @fecha_hora >= CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 08:00:00' AS DATETIME) AND @fecha_hora < CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 12:00:00' AS DATETIME) THEN '8 a 12'
-            WHEN @fecha_hora >= CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 12:00:00' AS DATETIME) AND @fecha_hora < CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 16:00:00' AS DATETIME) THEN '12 a 16'
-            WHEN @fecha_hora >= CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 16:00:00' AS DATETIME) AND @fecha_hora < CAST(CONVERT(VARCHAR, @fecha_hora, 112) + ' 20:00:00' AS DATETIME) THEN '16 a 20'
+            WHEN CAST(@fecha_hora AS TIME) BETWEEN '08:00:00' AND '12:00:00' THEN 'Turno de 8 a 12'
+            WHEN CAST(@fecha_hora AS TIME) BETWEEN '12:00:00' AND '16:00:00' THEN 'Turno de 12 a 16'
+            WHEN CAST(@fecha_hora AS TIME) BETWEEN '16:00:00' AND '20:00:00' THEN 'Turno de 16 a 20'
             ELSE 'Fuera de turno'
         END;
     RETURN @turno;
 END;
 GO
+
 ------------------------------------------------------------ Rango Etario
 CREATE FUNCTION BI_REYES_DE_DATOS.rangoEtario(@fechaNacimiento AS DATE)
 RETURNS INT
@@ -754,7 +752,7 @@ GROUP BY
 GO
 ----- 
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
------ 
+-----
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
 SELECT TOP 3
     s.id_sucursal as Sucursal,
@@ -815,6 +813,35 @@ GROUP BY
     t.anio,
     t.cuatrimestre;
 GO
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+----- EJECUCION DE LAS VISTAS -----
+-------------------------------------------------------------------
+--1 Porque una sola localidad
+select * from BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual
+--2 Porque todo fuera de turno
+select * from BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio
+--3
+select * from BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre
+--4 Porque todo fuera de turno y con la misma cantidad de ventas
+select * from BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad
+--5 Porque tan alto el porcentaje -- NO TAN IMPORTANTE
+select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes
+--6 Esta bien que sea tan alto el descuento
+select * from BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento 
+--7 Porque cero el procentaje en c/u
+select * from BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios
+--8
+select * from BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario
+--9
+select * from BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio
+--10 Porque es el importe es siempre el mismo
+select * from BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas
+--11
+select * from BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario
+--12 Porque el procentaje es tan alto --NO TAN IMPORTANTE
+select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago
 -------------------------------------------------------------------
 ----- BORRAR TODO ESQUEMA POR LAS DUDAS -----
 -------------------------------------------------------------------
