@@ -1,4 +1,4 @@
-USE GD1C2024
+	USE GD1C2024
 GO
 
 ------------------------------------------------------------------------------------------------
@@ -180,7 +180,7 @@ CREATE TABLE REYES_DE_DATOS.Ticket(
     id_sucursal INT NOT NULL,
     id_caja INT NOT NULL,
     id_empleado INT NOT NULL,
-    ticket_fecha_hora DATE NOT NULL,
+    ticket_fecha_hora DATETIME NOT NULL,
     ticket_subtotal DECIMAL(10, 2) NOT NULL,
     ticket_total DECIMAL(10, 2) NOT NULL,
     ticket_total_descuento_aplicado INT NOT NULL,
@@ -674,7 +674,7 @@ INSERT INTO REYES_DE_DATOS.Ticket_X_Pago(
 		p.id_pago
 	FROM gd_esquema.Maestra m
 		JOIN REYES_DE_DATOS.Ticket t ON m.TICKET_NUMERO = t.ticket_numero
-		JOIN REYES_DE_DATOS.Pago p ON t.ticket_total = p.pago_importe AND t.ticket_fecha_hora = p.pago_fecha
+		JOIN REYES_DE_DATOS.Pago p ON t.ticket_total = p.pago_importe 
 	WHERE t.id_ticket IS NOT NULL
 		and p.id_pago IS NOT NULL
 PRINT 'Migración de ticket_x_pago terminada';
