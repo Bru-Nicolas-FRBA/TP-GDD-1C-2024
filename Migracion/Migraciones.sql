@@ -92,13 +92,6 @@ CREATE TABLE REYES_DE_DATOS.Supermercado (
 	super_condicion_fiscal VARCHAR(50) NOT NULL
 );
 ---
-/*
-CREATE TABLE REYES_DE_DATOS.Tipo_Caja(
-	id_tipo_caja INT PRIMARY KEY IDENTITY(1,1),
-	tipo_caja_descripcion VARCHAR(50) UNIQUE NOT NULL,
-);
-*/
----
 CREATE TABLE REYES_DE_DATOS.Tipo_Comprobante(
 	id_tipo_comprobante INT PRIMARY KEY IDENTITY(1,1),
 	tipo_comprobante_nombre VARCHAR (1) NOT NULL, --caracter
@@ -120,15 +113,15 @@ CREATE TABLE REYES_DE_DATOS.Promocion(
 	promo_fecha_inicio DATETIME NOT NULL,
 	promo_fecha_fin DATETIME NOT NULL,
 );
-------------------------------------------------------------------------------------------------
------ Tablas con Clave foranea -----
-------------------------------------------------------------------------------------------------
 ---
 CREATE TABLE REYES_DE_DATOS.Caja(
 	id_caja INT PRIMARY KEY IDENTITY(1,1),
 	caja_numero INT NOT NULL,
 	caja_tipo VARCHAR(30) NOT NULL, 
 );
+------------------------------------------------------------------------------------------------
+----- Tablas con Clave foranea -----
+------------------------------------------------------------------------------------------------
 ---
 CREATE TABLE REYES_DE_DATOS.Domicilio (
     id_domicilio INT PRIMARY KEY IDENTITY(1,1),
@@ -147,9 +140,9 @@ CREATE TABLE REYES_DE_DATOS.Sucursal (
 ---
 CREATE TABLE REYES_DE_DATOS.Cliente (
     id_cliente INT PRIMARY KEY IDENTITY(1,1),
-    cliente_dni INT NOT NULL,
     cliente_id_domicilio INT NOT NULL,
     cliente_nombre VARCHAR(100) NOT NULL,
+    cliente_dni INT NOT NULL,
     cliente_apellido VARCHAR(100) NOT NULL,
     cliente_fecha_registro DATE NOT NULL,
     cliente_mail VARCHAR(100) NOT NULL,
@@ -172,10 +165,10 @@ CREATE TABLE REYES_DE_DATOS.Empleado (
 ---
 CREATE TABLE REYES_DE_DATOS.Producto (
 	id_producto INT PRIMARY KEY IDENTITY(1,1),
-	producto_codigo NVARCHAR(100) NOT NULL, -- PRODUCTO_NOMBRE
     id_producto_categoria INT NOT NULL,
     id_producto_subcategoria INT NOT NULL,
     id_marca INT NOT NULL,
+	producto_codigo NVARCHAR(100) NOT NULL, -- PRODUCTO_NOMBRE
     producto_descripcion NVARCHAR(100) NOT NULL,
     producto_precio DECIMAL(10, 2) NOT NULL
 );
@@ -222,7 +215,6 @@ CREATE TABLE REYES_DE_DATOS.Pago(
 	id_pago INT PRIMARY KEY IDENTITY(1,1), 
 	id_tipo_medio_de_pago INT NOT NULL,
 	id_descuento INT NOT NULL,
-	--id_cliente int not null,
 	pago_fecha DATETIME NOT NULL,
 	pago_importe DECIMAL(15,2) NOT NULL,
 	pago_numero_tarjeta VARCHAR(20), -- SON OPCIONALES PORQUE PUEDE PAGAR EN EFECTIVO
@@ -257,52 +249,33 @@ GO
 ------------------------------------------------------------------------------------------------
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
 ------------------------------------------------------------------------------------------------
---ALTER TABLE REYES_DE_DATOS.Promocion_X_Producto ADD CONSTRAINT PK_Promocion_X_Producto PRIMARY KEY (id_promocion)
 ALTER TABLE REYES_DE_DATOS.Promocion_X_Producto ADD CONSTRAINT FK_Promoxion_X_Producto_id_promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
 ALTER TABLE REYES_DE_DATOS.Promocion_X_Producto ADD CONSTRAINT FK_Promoxion_X_Producto_id_producto FOREIGN KEY (id_producto) REFERENCES REYES_DE_DATOS.Producto(id_producto)
-
---ALTER TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket ADD CONSTRAINT PK_Promocion_X_ItemTicket PRIMARY KEY (id_promocion, id_item_ticket);
 ALTER TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket ADD CONSTRAINT FK_Promocion_X_ItemTicket_Promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
 ALTER TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket ADD CONSTRAINT FK_Promocion_X_ItemTicket_Item_Ticket FOREIGN KEY (id_item_ticket) REFERENCES REYES_DE_DATOS.Item_Ticket(id_item_ticket)
-
---ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT PK_Ticket_X_Pago PRIMARY KEY (id_ticket, id_pago)
 ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT FK_Ticket_X_Pago_id_ticket FOREIGN KEY (id_ticket) REFERENCES REYES_DE_DATOS.Ticket (id_ticket)
 ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT FK_Ticket_X_Pago_id_pago FOREIGN KEY (id_pago) REFERENCES REYES_DE_DATOS.Pago (id_pago)
-
---ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT PK_Regla_X_Promocion PRIMARY KEY (id_promocion, id_regla)
 ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT FK_Regla_X_Promocion_Promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
 ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT FK_Regla_X_Promocion_Regla FOREIGN KEY (id_regla) REFERENCES REYES_DE_DATOS.Regla(id_regla)
-
 ALTER TABLE REYES_DE_DATOS.Pago ADD CONSTRAINT FK_id_descuento FOREIGN KEY (id_descuento) REFERENCES REYES_DE_DATOS.Descuento(descuento_codigo)
---ALTER TABLE REYES_DE_DATOS.Pago ADD CONSTRAINT FK_id_cliente FOREIGN KEY (id_cliente) REFERENCES REYES_DE_DATOS.Cliente(id_cliente)
---ALTER TABLE REYES_DE_DATOS.Pago ADD CONSTRAINT FK_id_tipo_medio_pago FOREIGN KEY (id_tipo_medio_pago) REFERENCES REYES_DE_DATOS.Tipo_medio_de_pago(id_tipo_medio_pago)
-
 ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES REYES_DE_DATOS.Producto(id_producto)
 ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_tipo_comprobante FOREIGN KEY (id_tipo_comprobante) REFERENCES REYES_DE_DATOS.Tipo_Comprobante(id_tipo_comprobante)
 ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES REYES_DE_DATOS.Sucursal(id_sucursal)
 ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
-
---ALTER TABLE REYES_DE_DATOS.Envio ADD CONSTRAINT FK_id_ticket FOREIGN KEY (id_ticket) REFERENCES REYES_DE_DATOS.Ticket(id_ticket)
 ALTER TABLE REYES_DE_DATOS.Envio ADD CONSTRAINT FK_id_cliente_envio FOREIGN KEY (id_cliente) REFERENCES REYES_DE_DATOS.Cliente(id_cliente)
-
 ALTER TABLE REYES_DE_DATOS.Ticket ADD CONSTRAINT FK_id_tipo_comprobante_ticket FOREIGN KEY (id_tipo_comprobante) REFERENCES REYES_DE_DATOS.Tipo_Comprobante(id_tipo_comprobante)
 ALTER TABLE REYES_DE_DATOS.Ticket ADD CONSTRAINT FK_id_sucursal_ticket FOREIGN KEY (id_sucursal) REFERENCES REYES_DE_DATOS.Sucursal(id_sucursal)
 ALTER TABLE REYES_DE_DATOS.Ticket ADD CONSTRAINT FK_id_caja_ticket FOREIGN KEY (id_caja) REFERENCES REYES_DE_DATOS.Caja(id_caja)
 ALTER TABLE REYES_DE_DATOS.Ticket ADD CONSTRAINT FK_id_empleado_ticket FOREIGN KEY (id_empleado) REFERENCES REYES_DE_DATOS.Empleado(id_empleado)
-
 ALTER TABLE REYES_DE_DATOS.Producto ADD CONSTRAINT FK_id_producto_categoria FOREIGN KEY (id_producto_categoria) REFERENCES REYES_DE_DATOS.Producto_categoria(id_producto_categoria)
 ALTER TABLE REYES_DE_DATOS.Producto ADD CONSTRAINT FK_id_producto_subcategoria FOREIGN KEY (id_producto_subcategoria) REFERENCES REYES_DE_DATOS.Producto_subcategoria(id_producto_subcategoria)
 ALTER TABLE REYES_DE_DATOS.Producto ADD CONSTRAINT FK_id_marca FOREIGN KEY (id_marca) REFERENCES REYES_DE_DATOS.Producto_marca(id_producto_marca)
-
 ALTER TABLE REYES_DE_DATOS.Empleado ADD CONSTRAINT FK_id_sucursal_empleado FOREIGN KEY (id_sucursal) REFERENCES REYES_DE_DATOS.Sucursal(id_sucursal)
 ALTER TABLE REYES_DE_DATOS.Empleado ADD CONSTRAINT UQ_empleado_email_empleado UNIQUE (empleado_email)
 ALTER TABLE REYES_DE_DATOS.Empleado ADD CONSTRAINT UQ_empleado_telefono_empleado UNIQUE (empleado_telefono)
-
 ALTER TABLE REYES_DE_DATOS.Cliente ADD CONSTRAINT FK_cliente_id_domicilio FOREIGN KEY (cliente_id_domicilio) REFERENCES REYES_DE_DATOS.Domicilio(id_domicilio)
-
 ALTER TABLE REYES_DE_DATOS.Domicilio ADD CONSTRAINT FK_id_localidad FOREIGN KEY (id_localidad) REFERENCES REYES_DE_DATOS.Localidad(id_localidad)
 ALTER TABLE REYES_DE_DATOS.Domicilio ADD CONSTRAINT FK_id_provincia FOREIGN KEY (id_provincia) REFERENCES REYES_DE_DATOS.Provincia(id_provincia)
-
 GO
 ------------------------------------------------------------------------------------------------
 ----- MIGRACION (respetar orden establecido) -----
@@ -388,13 +361,7 @@ SELECT DISTINCT m.SUPER_NOMBRE,
 FROM gd_esquema.Maestra m
 WHERE m.SUPER_CUIT IS NOT NULL
 PRINT 'Migración de supermercado terminada';
-/*
-INSERT INTO REYES_DE_DATOS.Tipo_Caja(tipo_caja_descripcion)
-	SELECT DISTINCT CAJA_TIPO
-	FROM gd_esquema.Maestra
-	WHERE CAJA_TIPO IS NOT NULL
-PRINT 'Migración de tipo de caja terminada';
-*/
+
 INSERT INTO REYES_DE_DATOS.Tipo_Comprobante(tipo_comprobante_nombre)
 	SELECT DISTINCT TICKET_TIPO_COMPROBANTE
 	FROM gd_esquema.Maestra
@@ -712,33 +679,6 @@ INSERT INTO REYES_DE_DATOS.Ticket_X_Pago(
 		and p.id_pago IS NOT NULL
 PRINT 'Migración de ticket_x_pago terminada';
 
---esta tiene que tardar mucho porque a cada item le pertenece una promocion (esto nos come 30s de ejecucion como minimo)
-/*
-INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(
-	id_promocion,
-	id_item_ticket
-	)
-	SELECT DISTINCT
-		p.id_promo,
-		it.id_item_ticket
-	FROM gd_esquema.Maestra m 
-		JOIN REYES_DE_DATOS.Promocion p ON 
-			m.PROMOCION_DESCRIPCION = p.promo_descripcion 
-			AND m.PROMOCION_FECHA_INICIO = p.promo_fecha_inicio 
-			AND m.PROMOCION_FECHA_FIN = p.promo_fecha_fin
-		JOIN REYES_DE_DATOS.Producto pr ON 
-			m.PRODUCTO_PRECIO = pr.producto_precio 
-			AND m.PRODUCTO_NOMBRE = pr.producto_codigo
-		JOIN REYES_DE_DATOS.Item_Ticket it ON
-			m.TICKET_NUMERO = it.ticket_numero
-			AND pr.id_producto = it.id_producto
-			AND m.PROMO_CODIGO = it.id_promocion
-	WHERE 
-		m.TICKET_NUMERO IS NOT NULL
-		AND m.PROMO_CODIGO IS NOT NULL 
-PRINT 'Migración de promo_x_item_ticket terminada';
-*/
-
 INSERT INTO REYES_DE_DATOS.Promocion_X_Producto(
 	id_promocion,
 	id_producto
@@ -756,11 +696,6 @@ INSERT INTO REYES_DE_DATOS.Promocion_X_Producto(
 		AND m.PROMO_CODIGO IS NOT NULL
 PRINT 'Migración de promocion_x_producto terminada';
 GO
-
-/*
-kk
-Promocion_X_Item_Ticket
-*/
 ------------------------------------------------------------------------------------------------
 ----- COMPROBACION PARA ROLLBACK -----
 ------------------------------------------------------------------------------------------------
@@ -788,7 +723,6 @@ IF (
 	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Pago)
 	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Regla_x_Promocion)
 	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Ticket_X_Pago)
-	--AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion_X_Item_Ticket)
 	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion_X_Producto)
 )
 	BEGIN
@@ -799,11 +733,3 @@ ELSE
 		RAISERROR ('Error al migrar una o más tablas', 14, 1)
 	END
 GO
-
-/*
-Cosas finales Para revisar
-pago
-reglaXpromocion
-ticketXpago
-promocionXproducto
-*/
