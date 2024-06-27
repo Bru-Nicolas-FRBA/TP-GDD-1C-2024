@@ -1,8 +1,10 @@
+/*SI SALTA ERROR DE FOREIGN KEY CORRER DOS VECES EL CODIGO*/
+
 USE [GD1C2024]
 GO
------ ----- ----- ----- ----- ----- ----- ----- 
------ BORRAR -----  /*A veces necesitaremos ejecutar "BORRAR" dos veces (todavia no encontramos el por qué de esto)*/
------ ----- ----- ----- ----- ----- ----- ----- 
+----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
+----- CORRER ESTO INDIVIDUALMENTE ANTES DE CADA TEST COMPLETO -----  /*A veces necesitaremos ejecutar "BORRAR" dos veces (todavia no encontramos el por qué de esto)*/
+----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
 ------------------------------------------------------------ Tablas 
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo; end
@@ -172,7 +174,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
     venta_id_sucursal INT NOT NULL,
     venta_id_caja INT NOT NULL,
     venta_id_empleado INT NOT NULL,
-    ticket_fecha_hora DATE NOT NULl,
+    ticket_fecha_hora DATETIME NOT NULl,
     venta_total DECIMAL(10, 2) NOT NULL,
     ticket_total_descuento_aplicado DECIMAL(10, 2),
 	ticket_monto_total_envio DECIMAL(10, 2)
@@ -209,16 +211,16 @@ GO
 -----  CREACIÓN DE FUNCIONES -----
 ----- ----- ----- ----- ----- ----- 
 ------------------------------------------------------------ Turno
-CREATE FUNCTION BI_REYES_DE_DATOS.turno(@fecha_hora DATETIME)
+CREATE FUNCTION BI_REYES_DE_DATOS.turno(@hora TIME)
 RETURNS VARCHAR(50)
 AS
 BEGIN
     DECLARE @turno VARCHAR(50);
     SELECT @turno = 
         CASE 
-            WHEN CAST(@fecha_hora AS TIME) BETWEEN '08:00:00' AND '11:59:59' THEN 'Turno de 8 a 12'
-            WHEN CAST(@fecha_hora AS TIME) BETWEEN '12:00:00' AND '15:59:59' THEN 'Turno de 12 a 16'
-            WHEN CAST(@fecha_hora AS TIME) BETWEEN '16:00:00' AND '20:00:00' THEN 'Turno de 16 a 20'
+            WHEN @hora BETWEEN '08:00:00' AND '11:59:59' THEN 'Turno de 8 a 12'
+            WHEN @hora BETWEEN '12:00:00' AND '15:59:59' THEN 'Turno de 12 a 16'
+            WHEN @hora BETWEEN '16:00:00' AND '20:00:00' THEN 'Turno de 16 a 20'
             ELSE 'Fuera de turno'
         END;
     RETURN @turno;
@@ -573,7 +575,7 @@ SELECT
 	--promedio cantidad unidades
 	avg(t.item_ticket_cantidad) as Promedio,
 	--para cada turno
-	BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora) as Turno,
+	BI_REYES_DE_DATOS.turno(CAST(v.ticket_fecha_hora AS TIME)) as Turno,
     --para cada cuatrimestre
 	tmp.cuatrimestre as Cuatrimestre,
     --para cada anio
@@ -583,7 +585,8 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
 	join BI_REYES_DE_DATOS.BI_Tiempo tmp on vt.id_tiempo = tmp.id_tiempo
 	join BI_REYES_DE_DATOS.BI_Ticket t on t.id_ticket = v.id_ticket
 GROUP BY
-	BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora),
+	--3,
+	v.ticket_fecha_hora,
 	tmp.cuatrimestre,
 	tmp.anio;
 GO
@@ -627,7 +630,7 @@ SELECT
     l.localidad_nombre as Localidad,
     t.mes as Mes,
     t.anio as Año,
-    BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora) as Turno,
+	BI_REYES_DE_DATOS.turno(CAST(v.ticket_fecha_hora AS TIME)) as Turno,
     count(*) as CantidadVentas
 FROM BI_REYES_DE_DATOS.BI_Venta v
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
@@ -637,10 +640,10 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
     JOIN BI_REYES_DE_DATOS.BI_Ubicacion u ON vu.id_ubicacion = u.id_ubicacion
 	join REYES_DE_DATOS.Localidad l on u.id_localidad = l.id_localidad
 GROUP BY
-    l.localidad_nombre,
+    v.ticket_fecha_hora,
+	l.localidad_nombre,
     t.mes,
-    t.anio,
-    BI_REYES_DE_DATOS.turno(v.ticket_fecha_hora);
+    t.anio;
 GO
 ----- 
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
@@ -814,11 +817,11 @@ GO
 -------------------------------------------------------------------
 --1 Porque una sola localidad
 select * from BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual
---2 Porque todo fuera de turno
+--2
 select * from BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio
 --3
 select * from BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre
---4 Porque todo fuera de turno y con la misma cantidad de ventas
+--4 Porque una sola localidad
 select * from BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad
 --5 Porque tan alto el porcentaje -- NO TAN IMPORTANTE
 select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes
@@ -879,8 +882,4 @@ SET @sql = @sql + 'DROP SCHEMA ' + QUOTENAME(@schemaName) + ';' + CHAR(13);
 
 -- Ejecutar los comandos generados
 EXEC sp_executesql @sql;
-*/
-
-/*
-venta ubicacion
 */
