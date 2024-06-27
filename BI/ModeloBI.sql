@@ -160,8 +160,6 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Envio (
     id_ticket int not null,
 	id_cliente INT NOT NULL,
     envio_fecha_programada DATETIME NULL,
-    envio_horario_inicio INT NOT NULL,
-    envio_horario_fin INT NOT NULL,
     envio_fecha_entrega DATETIME NOT NULL,
     envio_costo DECIMAL(10, 2) NOT NULL,
 );
@@ -477,8 +475,6 @@ INSERT INTO BI_REYES_DE_DATOS.BI_Envio ( --error no se porque
     id_ticket,
     id_cliente,
     envio_fecha_programada,
-    envio_horario_inicio,
-    envio_horario_fin,
     envio_fecha_entrega,
     envio_costo
 )
@@ -486,8 +482,6 @@ SELECT
 	e.id_ticket,
     e.id_cliente,
     e.envio_fecha_programada,
-    e.envio_horario_inicio,
-    e.envio_horario_fin,
     e.envio_fecha_entrega,
     e.envio_costo
 FROM REYES_DE_DATOS.Envio e
