@@ -669,7 +669,7 @@ SELECT top 3
 	t.anio as Anio,
     t.cuatrimestre as Cuatrimestre,
     pc.producto_categoria_detalle as Categoria,
-    sum(v.ticket_total_descuento_aplicado) as DescuentoAplicado
+	sum(v.ticket_total_descuento_aplicado) as SumatoriaDescuentosAplicados
 FROM BI_REYES_DE_DATOS.BI_Venta v
 	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
 	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
@@ -690,16 +690,7 @@ SELECT
     s.id_sucursal AS Sucursal,
     t.anio AS Año,
     t.mes AS Mes,
-    (
-        COUNT(
-            CASE 
-                WHEN 
-                    e.envio_fecha_entrega <= e.envio_fecha_programada
-                THEN 1 
-            ELSE NULL 
-            END
-        ) * 100.0
-    ) / COUNT(e.id_envio) AS PorcentajeDeCumplimiento
+	(COUNT(CASE WHEN e.envio_fecha_entrega <= e.envio_fecha_programada THEN 1 ELSE NULL END) * 100.0) / COUNT(e.id_envio) AS PorcentajeDeCumplimiento
 FROM BI_REYES_DE_DATOS.BI_Envio e
     JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_ticket = v.id_ticket 
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
@@ -751,12 +742,14 @@ GO
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
 -----
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
-SELECT TOP 3
+-- Por cada sucursal (top 3) mostramos cada mes (11 meses segun tabla), medio de pago (3 medios de pago) y anio (1 anio)
+-- Por eso no pusimos top 3 sino top (11*3*3) = top 99
+SELECT top 99
     s.id_sucursal as Sucursal,
     mp.medio_de_pago_clasificacion as MedioDePago,
+	t.mes as Mes,
     t.anio as Anio,
-    t.mes as Mes,
-    sum(p.pago_importe) as ImporteCuotas
+    sum(p.pago_importe) as MayorImporteCuotas
 FROM BI_REYES_DE_DATOS.BI_Venta v
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
@@ -768,10 +761,33 @@ FROM BI_REYES_DE_DATOS.BI_Venta v
 where p.medio_de_pago_cuotas is not null
 GROUP BY
     s.id_sucursal,
+	t.anio,
     mp.medio_de_pago_clasificacion,
-    t.anio,
-    t.mes;
+	t.mes;
 GO
+--Si fuese solo un top 3 por sucursales sin tener en cuenta los meses quedaria asi
+/*
+SELECT top 9
+    s.id_sucursal as Sucursal,
+    mp.medio_de_pago_clasificacion as MedioDePago,
+    t.anio as Anio,
+    sum(p.pago_importe) as MayorImporteCuotas
+FROM BI_REYES_DE_DATOS.BI_Venta v
+    JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
+    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
+	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
+	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_ticket
+	join REYES_DE_DATOS.Ticket_X_Pago x on x.id_ticket = v.id_ticket
+    join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
+    join REYES_DE_DATOS.Tipo_medio_de_pago mp on p.id_tipo_medio_de_pago = mp.id_tipo_medio_pago
+where p.medio_de_pago_cuotas is not null
+GROUP BY
+    s.id_sucursal,
+	t.anio,
+    mp.medio_de_pago_clasificacion;
+GO
+
+*/
 ----- 
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
 ----- 
@@ -815,27 +831,27 @@ GO
 -------------------------------------------------------------------
 ----- EJECUCION DE LAS VISTAS -----
 -------------------------------------------------------------------
---1 Porque una sola localidad
+--1
 select * from BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual
 --2
 select * from BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio
 --3
 select * from BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre
---4 Porque una sola localidad
+--4
 select * from BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad
---5 Porque tan alto el porcentaje -- NO TAN IMPORTANTE
+--5
 select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes
---6 Esta bien que sea tan alto el descuento
+--6
 select * from BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento 
---7 Porque cero el procentaje en c/u
+--7
 select * from BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios
 --8
 select * from BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario
 --9
 select * from BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio
---10 Porque es el importe es siempre el mismo
+--10
 select * from BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas
 --11
 select * from BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario
---12 Porque el procentaje es tan alto --NO TAN IMPORTANTE
+--12
 select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago
