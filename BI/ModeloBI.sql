@@ -216,8 +216,8 @@ BEGIN
     DECLARE @turno VARCHAR(50);
     SELECT @turno = 
         CASE 
-            WHEN CAST(@fecha_hora AS TIME) BETWEEN '08:00:00' AND '12:00:00' THEN 'Turno de 8 a 12'
-            WHEN CAST(@fecha_hora AS TIME) BETWEEN '12:00:00' AND '16:00:00' THEN 'Turno de 12 a 16'
+            WHEN CAST(@fecha_hora AS TIME) BETWEEN '08:00:00' AND '11:59:59' THEN 'Turno de 8 a 12'
+            WHEN CAST(@fecha_hora AS TIME) BETWEEN '12:00:00' AND '15:59:59' THEN 'Turno de 12 a 16'
             WHEN CAST(@fecha_hora AS TIME) BETWEEN '16:00:00' AND '20:00:00' THEN 'Turno de 16 a 20'
             ELSE 'Fuera de turno'
         END;
