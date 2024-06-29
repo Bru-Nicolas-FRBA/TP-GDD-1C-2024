@@ -3,12 +3,14 @@
 USE [GD1C2024]
 GO
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
------ CORRER ESTO INDIVIDUALMENTE ANTES DE CADA TEST COMPLETO -----  /*A veces necesitaremos ejecutar "BORRAR" dos veces (todavia no encontramos el por qué de esto)*/
+----- CORRER ESTO INDIVIDUALMENTE ANTES DE CADA TEST COMPLETO -----  
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
 ------------------------------------------------------------ Tablas 
+/*A veces necesitaremos ejecutar "BORRAR" dos veces (todavia no encontramos el por qué de esto)*/
+
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Ticket') begin DROP TABLE BI_REYES_DE_DATOS.BI_Ticket; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_ticket') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_ticket; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto_subcategoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto_subcategoria; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto_categoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto_categoria; end
@@ -16,9 +18,9 @@ if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYE
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Descuento') begin DROP TABLE BI_REYES_DE_DATOS.BI_Descuento; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_medio_de_pago') begin DROP TABLE BI_REYES_DE_DATOS.BI_medio_de_pago; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Rango_Etario')begin DROP TABLE BI_REYES_DE_DATOS.BI_Rango_Etario; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Venta') begin DROP TABLE BI_REYES_DE_DATOS.BI_Venta; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Caja') begin DROP TABLE BI_REYES_DE_DATOS.BI_Caja; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Envio') begin DROP TABLE BI_REYES_DE_DATOS.BI_Envio; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_envio') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_envio; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Promocion') begin DROP TABLE BI_REYES_DE_DATOS.BI_Promocion; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Empleado') begin DROP TABLE BI_REYES_DE_DATOS.BI_Empleado; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_turno') begin DROP TABLE BI_REYES_DE_DATOS.BI_turno; end
@@ -147,7 +149,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Promocion(
 	promo_descripcion VARCHAR(50) NOT NULL
 );
 -----
-CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket(
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_ticket(
     id_ticket INT PRIMARY KEY IDENTITY(1,1),
     ticket_numero VARCHAR(50) NOT NULL,
     id_sucursal INT NOT NULL, 
@@ -157,7 +159,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Ticket(
     item_ticket_precio INT NOT NULL
 );
 -----
-CREATE TABLE BI_REYES_DE_DATOS.BI_Envio (
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_envio (
     id_envio INT PRIMARY KEY IDENTITY(1,1),
     id_ticket int not null,
 	id_cliente INT NOT NULL,
@@ -166,7 +168,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Envio (
     envio_costo DECIMAL(10, 2) NOT NULL,
 );
 ----- /*Ticket*/
-CREATE TABLE BI_REYES_DE_DATOS.BI_Venta(
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta(
     id_venta INT PRIMARY KEY IDENTITY(1,1),
 	id_ticket int not null,
 	venta_numero INT NOT NULL,
@@ -187,7 +189,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo (
     id_tiempo INT FOREIGN KEY (id_tiempo) REFERENCES BI_REYES_DE_DATOS.BI_Tiempo(id_tiempo)
 );
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion (
-    id_venta INT PRIMARY KEY FOREIGN KEY (id_venta) REFERENCES BI_REYES_DE_DATOS.BI_Venta(id_venta),
+    id_venta INT PRIMARY KEY FOREIGN KEY (id_venta) REFERENCES BI_REYES_DE_DATOS.BI_hechos_venta(id_venta),
     id_ubicacion INT FOREIGN KEY (id_ubicacion) REFERENCES BI_REYES_DE_DATOS.BI_Ubicacion(id_ubicacion),
     id_provincia INT NOT NULL,
     id_localidad INT NOT NULL,
@@ -195,13 +197,13 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion (
 ------------------------------------------------------------------------------------------------
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
 ------------------------------------------------------------------------------------------------
-ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_sucursal_hechos_venta FOREIGN KEY (venta_id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_caja_hechos_venta FOREIGN KEY (venta_id_caja) REFERENCES BI_REYES_DE_DATOS.BI_Caja(id_caja)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Venta ADD CONSTRAINT FK_id_empleado_hechos_venta FOREIGN KEY (venta_id_empleado) REFERENCES BI_REYES_DE_DATOS.BI_Empleado(id_empleado)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES BI_REYES_DE_DATOS.BI_Producto(id_producto)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Ticket ADD CONSTRAINT FK_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Envio ADD CONSTRAINT FK_id_cliente_envio FOREIGN KEY (id_cliente) REFERENCES BI_REYES_DE_DATOS.BI_Cliente(id_cliente)
-ALTER TABLE BI_REYES_DE_DATOS.BI_Envio ADD CONSTRAINT FK_id_ticket_envio FOREIGN KEY (id_ticket) REFERENCES BI_REYES_DE_DATOS.BI_Ticket(id_ticket)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_venta ADD CONSTRAINT FK_id_sucursal_hechos_venta FOREIGN KEY (venta_id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_venta ADD CONSTRAINT FK_id_caja_hechos_venta FOREIGN KEY (venta_id_caja) REFERENCES BI_REYES_DE_DATOS.BI_Caja(id_caja)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_venta ADD CONSTRAINT FK_id_empleado_hechos_venta FOREIGN KEY (venta_id_empleado) REFERENCES BI_REYES_DE_DATOS.BI_Empleado(id_empleado)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_ticket ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES BI_REYES_DE_DATOS.BI_Producto(id_producto)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_ticket ADD CONSTRAINT FK_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_envio ADD CONSTRAINT FK_id_cliente_envio FOREIGN KEY (id_cliente) REFERENCES BI_REYES_DE_DATOS.BI_Cliente(id_cliente)
+ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_envio ADD CONSTRAINT FK_id_ticket_envio FOREIGN KEY (id_ticket) REFERENCES BI_REYES_DE_DATOS.BI_hechos_ticket(id_ticket)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Producto ADD CONSTRAINT FK_id_producto_categoria FOREIGN KEY (id_producto_categoria) REFERENCES BI_REYES_DE_DATOS.BI_Producto_categoria(id_producto_categoria)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Producto ADD CONSTRAINT FK_id_producto_subcategoria FOREIGN KEY (id_producto_subcategoria) REFERENCES BI_REYES_DE_DATOS.BI_Producto_subcategoria(id_producto_subcategoria)
 ALTER TABLE BI_REYES_DE_DATOS.BI_Empleado ADD CONSTRAINT FK_id_sucursal_empleado FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
@@ -424,7 +426,7 @@ FROM REYES_DE_DATOS.Empleado
 PRINT 'Migración de BI_Empleado terminada'
 GO
 ------------------------------------------------------------ Ticket / Venta -- TITO
-INSERT INTO BI_REYES_DE_DATOS.BI_Venta(
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta(
 	id_ticket,
 	venta_numero,
 	venta_id_tipo_comprobante,
@@ -450,10 +452,10 @@ SELECT
 FROM REYES_DE_DATOS.Ticket t
     JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
     JOIN REYES_DE_DATOS.Pago p on x.id_pago = p.id_pago;
-PRINT 'Migración de BI_Venta terminada' --si tira error aca todavia no se que es, no tiene sentido porque no esta vinculada con producto
+PRINT 'Migración de BI_hechos_venta terminada' --si tira error aca todavia no se que es, no tiene sentido porque no esta vinculada con producto
 GO
 ------------------------------------------------------------ Item Ticket
-INSERT INTO BI_REYES_DE_DATOS.BI_Ticket -- error no se porque
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_ticket -- error no se porque
 (
     ticket_numero,
     id_sucursal,
@@ -470,10 +472,10 @@ SELECT
     item_ticket_cantidad,
     item_ticket_precio
 FROM REYES_DE_DATOS.Item_Ticket t
-PRINT 'Migración de BI_Ticket terminada'
+PRINT 'Migración de BI_hechos_ticket terminada'
 GO --kk esto no se que error tiene
 ------------------------------------------------------------ Envio
-INSERT INTO BI_REYES_DE_DATOS.BI_Envio ( --error no se porque
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_envio ( --error no se porque
     id_ticket,
     id_cliente,
     envio_fecha_programada,
@@ -487,7 +489,7 @@ SELECT
     e.envio_fecha_entrega,
     e.envio_costo
 FROM REYES_DE_DATOS.Envio e
-PRINT 'Migración de BI_Envio terminada'
+PRINT 'Migración de BI_hechos_envio terminada'
 GO
 ------------------------------------------------------------ Promocion
 INSERT INTO BI_REYES_DE_DATOS.BI_Promocion(
@@ -515,8 +517,8 @@ SELECT
     v.ticket_fecha_hora,
     e.envio_fecha_entrega,
     t.id_tiempo
-FROM BI_REYES_DE_DATOS.BI_Venta v
-	JOIN BI_REYES_DE_DATOS.BI_Envio e ON v.id_ticket = e.id_ticket
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
+	JOIN BI_REYES_DE_DATOS.BI_hechos_envio e ON v.id_ticket = e.id_ticket
 	JOIN BI_REYES_DE_DATOS.BI_tiempo t ON YEAR(v.ticket_fecha_hora) = t.anio 
 		AND MONTH(v.ticket_fecha_hora) = t.mes
 		AND 
@@ -539,7 +541,7 @@ SELECT
     u.id_ubicacion,
     u.id_provincia,
     u.id_localidad
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
 	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
 	join BI_REYES_DE_DATOS.BI_Ubicacion u on s.sucursal_domicilio = u.direccion
 PRINT 'Migración de BI_hechos_venta_ubicacion terminada'
@@ -556,7 +558,7 @@ SELECT
     l.localidad_nombre,
     t.anio AS Año,
     t.mes AS Mes
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
 	JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON v.id_venta = vt.id_venta
 	JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON vt.id_tiempo = t.id_tiempo
 	JOIN BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion vu ON v.id_venta = vu.id_venta
@@ -580,10 +582,10 @@ SELECT
 	tmp.cuatrimestre as Cuatrimestre,
     --para cada anio
 	tmp.anio as Año
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
 	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_venta = vt.id_tiempo
 	join BI_REYES_DE_DATOS.BI_Tiempo tmp on vt.id_tiempo = tmp.id_tiempo
-	join BI_REYES_DE_DATOS.BI_Ticket t on t.id_ticket = v.id_ticket
+	join BI_REYES_DE_DATOS.BI_hechos_ticket t on t.id_ticket = v.id_ticket
 GROUP BY
 	--3,
 	v.ticket_fecha_hora,
@@ -603,7 +605,7 @@ SELECT
         /
         (
             SELECT SUM(v2.venta_total)
-                FROM BI_REYES_DE_DATOS.BI_Venta v2
+                FROM BI_REYES_DE_DATOS.BI_hechos_venta v2
                     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt2 ON v2.id_ticket = vt2.id_venta
                     JOIN BI_REYES_DE_DATOS.BI_Tiempo t2 ON vt2.id_tiempo = t2.id_tiempo
                 WHERE
@@ -611,7 +613,7 @@ SELECT
         )
     ) as Porcentaje
 FROM 
-    BI_REYES_DE_DATOS.BI_Venta v
+    BI_REYES_DE_DATOS.BI_hechos_venta v
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON v.id_ticket = vt.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON vt.id_tiempo = t.id_tiempo
     JOIN BI_REYES_DE_DATOS.BI_Caja c ON c.id_caja = v.id_venta
@@ -632,7 +634,7 @@ SELECT
     t.anio as Año,
 	BI_REYES_DE_DATOS.turno(CAST(v.ticket_fecha_hora AS TIME)) as Turno,
     count(*) as CantidadVentas
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
 	JOIN BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion vu ON vu.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
@@ -653,7 +655,7 @@ SELECT
 	t.anio as Año,
 	t.mes as Mes,
 	(count(distinct v.ticket_total_descuento_aplicado) * 100) / (count (distinct v.id_venta)) as Porcentaje
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
 	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
 	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
 WHERE v.ticket_total_descuento_aplicado is not null
@@ -670,10 +672,10 @@ SELECT top 3
     t.cuatrimestre as Cuatrimestre,
     pc.producto_categoria_detalle as Categoria,
 	sum(v.ticket_total_descuento_aplicado) as SumatoriaDescuentosAplicados
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
 	join BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt on v.id_ticket = vt.id_venta
 	join BI_REYES_DE_DATOS.BI_Tiempo t on vt.id_tiempo = t.id_tiempo
-	join BI_REYES_DE_DATOS.BI_Ticket tck on v.id_ticket = tck.id_ticket
+	join BI_REYES_DE_DATOS.BI_hechos_ticket tck on v.id_ticket = tck.id_ticket
 	join REYES_DE_DATOS.Producto p on tck.id_producto = p.id_producto
 	join BI_REYES_DE_DATOS.BI_Producto_categoria pc on p.id_producto_categoria = pc.id_producto_categoria
 WHERE v.ticket_total_descuento_aplicado IS NOT NULL
@@ -691,8 +693,8 @@ SELECT
     t.anio AS Año,
     t.mes AS Mes,
 	(COUNT(CASE WHEN e.envio_fecha_entrega <= e.envio_fecha_programada THEN 1 ELSE NULL END) * 100.0) / COUNT(e.id_envio) AS PorcentajeDeCumplimiento
-FROM BI_REYES_DE_DATOS.BI_Envio e
-    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_ticket = v.id_ticket 
+FROM BI_REYES_DE_DATOS.BI_hechos_envio e
+    JOIN BI_REYES_DE_DATOS.BI_hechos_venta v ON e.id_ticket = v.id_ticket 
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
     JOIN BI_REYES_DE_DATOS.BI_Sucursal s ON v.venta_id_sucursal = s.id_sucursal
@@ -712,8 +714,8 @@ SELECT
     t.cuatrimestre as Cuatrimeste,
     t.anio as Año,
     count(*) as CantidadEnvios
-FROM BI_REYES_DE_DATOS.BI_Envio e
-    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_ticket = v.id_ticket
+FROM BI_REYES_DE_DATOS.BI_hechos_envio e
+    JOIN BI_REYES_DE_DATOS.BI_hechos_venta v ON e.id_ticket = v.id_ticket
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo 
 	JOIN BI_REYES_DE_DATOS.BI_Cliente c ON e.id_cliente = c.id_cliente
@@ -730,7 +732,7 @@ SELECT TOP 5
     c.id_cliente as Cliente,
     l.localidad_nombre as Localidad,
     sum(e.envio_costo) as CostoEnvio
-FROM BI_REYES_DE_DATOS.BI_Envio e
+FROM BI_REYES_DE_DATOS.BI_hechos_envio e
 	JOIN BI_REYES_DE_DATOS.BI_Cliente c on e.id_cliente = c.id_cliente
 	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u on c.cliente_id_domicilio = u.id_ubicacion
 	JOIN REYES_DE_DATOS.Localidad l on u.id_localidad = l.id_localidad
@@ -750,11 +752,11 @@ SELECT top 99
 	t.mes as Mes,
     t.anio as Anio,
     sum(p.pago_importe) as MayorImporteCuotas
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
 	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
-	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_ticket
+	join BI_REYES_DE_DATOS.BI_hechos_ticket tk on v.id_ticket = tk.id_ticket
 	join REYES_DE_DATOS.Ticket_X_Pago x on x.id_ticket = v.id_ticket
     join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
     join REYES_DE_DATOS.Tipo_medio_de_pago mp on p.id_tipo_medio_de_pago = mp.id_tipo_medio_pago
@@ -772,11 +774,11 @@ SELECT top 9
     mp.medio_de_pago_clasificacion as MedioDePago,
     t.anio as Anio,
     sum(p.pago_importe) as MayorImporteCuotas
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
 	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
-	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_ticket
+	join BI_REYES_DE_DATOS.BI_hechos_ticket tk on v.id_ticket = tk.id_ticket
 	join REYES_DE_DATOS.Ticket_X_Pago x on x.id_ticket = v.id_ticket
     join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
     join REYES_DE_DATOS.Tipo_medio_de_pago mp on p.id_tipo_medio_de_pago = mp.id_tipo_medio_pago
@@ -795,10 +797,10 @@ CREATE VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario AS
 SELECT
     BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento) AS RangoEtario,
     AVG(p.pago_importe) AS PromedioImporteCuota
-FROM BI_REYES_DE_DATOS.BI_Envio e
-    JOIN BI_REYES_DE_DATOS.BI_Venta v ON e.id_ticket = v.id_ticket
+FROM BI_REYES_DE_DATOS.BI_hechos_envio e
+    JOIN BI_REYES_DE_DATOS.BI_hechos_venta v ON e.id_ticket = v.id_ticket
 	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
-	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_ticket
+	join BI_REYES_DE_DATOS.BI_hechos_ticket tk on v.id_ticket = tk.id_ticket
 	join REYES_DE_DATOS.Ticket_X_Pago x on x.id_ticket = v.id_ticket
     join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
     JOIN BI_REYES_DE_DATOS.BI_Cliente c ON e.id_cliente = c.id_cliente
@@ -814,10 +816,10 @@ SELECT
     t.anio as Año,
     t.cuatrimestre as Cuatrimestre,
     (count(distinct v.ticket_total_descuento_aplicado) * 100) / (count (distinct v.id_venta)) as Porcentaje
-FROM BI_REYES_DE_DATOS.BI_Venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
     JOIN BI_REYES_DE_DATOS.BI_hechos_venta_tiempo vt ON vt.id_venta = v.id_venta
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
-	join BI_REYES_DE_DATOS.BI_Ticket tk on v.id_ticket = tk.id_ticket
+	join BI_REYES_DE_DATOS.BI_hechos_ticket tk on v.id_ticket = tk.id_ticket
 	join REYES_DE_DATOS.Ticket_X_Pago x on x.id_ticket = v.id_ticket
     join REYES_DE_DATOS.Pago p on p.id_pago = x.id_pago
     join REYES_DE_DATOS.Tipo_medio_de_pago mp on p.id_tipo_medio_de_pago = mp.id_tipo_medio_pago
