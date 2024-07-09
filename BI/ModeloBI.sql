@@ -190,7 +190,6 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_promociones (
   	id_promocion INT NOT NULL,
-	id_venta INT NOT NULL,
 	id_categoria_prod INT NOT NULL,
 	id_subcategoria INT NOT NULL,
 	cantidad_promociones INT NOT NULL,
@@ -199,7 +198,6 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_promociones (
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
 ------------------------------------------------------------------------------------------------
 ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_venta ADD CONSTRAINT FK_id_sucursal_hechos_venta FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
-ALTER TABLE BI_REYES_DE_DATOS.BIhechos_promociones ADD CONSTRAINT FK_id_sucursal_hechos_promcion FOREIGN KEY (id_venta) REFERENCES BI_REYES_DE_DATOS.BI_hechos_venta(id_venta)
 GO
 ----- ----- ----- ----- ----- ----- ----- ----- 
 -----  CREACIÓN DE MIGRACIONES-DIMENSIONES -----
@@ -361,19 +359,18 @@ FROM REYES_DE_DATOS.Ticket t
 	JOIN BI_REYES_DE_DATOS.BI_Sucursal s on s.id_sucursal = t.id_sucursal
 	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u on u.direccion = s.sucursal_domicilio
 	JOIN REYES_DE_DATOS.Empleado e on t.id_empleado = e.id_empleado
-	JOIN REYES_DE_DATOS.Item_Ticket i on i.ticket_numero+i.id_sucursal+i.id_tipo_comprobante = t.ticket_numero+t.id_sucursal+t.id_tipo_comprobante
+	JOIN REYES_DE_DATOS.Item_Ticket i on i.ticket_numero= t.ticket_numero
 	JOIN REYES_DE_DATOS.Producto p on i.id_producto = p.id_producto
 	JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
 	JOIN REYES_DE_DATOS.Pago pg on x.id_pago = pg.id_pago
 	JOIN REYES_DE_DATOS.Tipo_medio_de_pago mp on pg.id_tipo_medio_de_pago = mp.id_tipo_medio_pago
 GROUP BY tp.id_tiempo,
-	tp.id_tiempo,
 	u.id_ubicacion,
 	s.id_sucursal,
 	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
 	BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
-	--p.id_producto_categoria,
-	--p.id_producto_subcategoria,
+	p.id_producto_categoria,
+	p.id_producto_subcategoria,
 	mp.id_tipo_medio_pago,
 	t.id_caja
 PRINT 'Migración de BI_hechos_venta terminada'
