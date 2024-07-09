@@ -299,7 +299,7 @@ INSERT INTO BI_REYES_DE_DATOS.BI_hechos_envio (
 SELECT
 	t.id_tiempo,
 	u.id_ubicacion,
-	--s.id_sucursal,
+	s.id_sucursal,
 	BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
 	BI_REYES_DE_DATOS.turno(CAST(e.envio_fecha_entrega AS TIME)),
 	e.envio_fecha_programada,
@@ -312,10 +312,11 @@ FROM REYES_DE_DATOS.Envio e
 		and BI_REYES_DE_DATOS.cuatrimestre(month(e.envio_fecha_entrega)) = t.cuatrimestre
 	join REYES_DE_DATOS.Cliente c on c.id_cliente = e.id_cliente
 	join BI_REYES_DE_DATOS.BI_Ubicacion u on c.cliente_id_domicilio = u.id_ubicacion
-	--join BI_REYES_DE_DATOS.BI_Sucursal s on s.sucursal_domicilio = u.direccion
+	join REYES_DE_DATOS.Ticket tk on e.id_ticket = tk.id_ticket
+	join BI_REYES_DE_DATOS.BI_Sucursal s on tk.id_sucursal = s.id_sucursal
 group by t.id_tiempo,
 	u.id_ubicacion,
-	--s.id_sucursal,
+	s.id_sucursal,
 	BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
 	BI_REYES_DE_DATOS.turno(CAST(e.envio_fecha_entrega AS TIME)),
 	e.envio_fecha_programada,
