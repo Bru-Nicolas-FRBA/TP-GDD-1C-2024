@@ -12,7 +12,7 @@ No pueden tener la dimensión empleado y cliente, por algo se les pide la dimens
 USE [GD1C2024]
 GO
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
------ CORRER ESTO INDIVIDUALMENTE ANTES DE CADA TEST COMPLETO -----  CORREGIR LO
+----- CORRER ESTO INDIVIDUALMENTE ANTES DE CADA TEST COMPLETO ----- 
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
 ------------------------------------------------------------ Tablas 
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion; end
