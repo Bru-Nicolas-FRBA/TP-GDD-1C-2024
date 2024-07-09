@@ -1,13 +1,20 @@
 /*SI SALTA ERROR DE FOREIGN KEY CORRER DOS VECES EL CODIGO*/
 
+/*
+No identifica correctamente los hechos. Los hechos son: Ventas / Promociones / Pagos / Envios.
+Las tablas de hechos deben tener información agrupada y sumarizada por sus dimensiones y no contener información del modelo relacional en particular. Si la tabla del modelo relacional y la tabla de hechos tienen la misma cantidad de registros está mal. 
+En el hecho de ventas no pueden tener información del modelo relación de los tickets específicos.
+La dimensión Producto no es correcta, no pueden identificar un producto en particular.
+La dimensión promoción no es correcta porque debería ser un hecho
+No pueden tener la dimensión empleado y cliente, por algo se les pide la dimensión Rango Etario.
+*/
+
 USE [GD1C2024]
 GO
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
------ CORRER ESTO INDIVIDUALMENTE ANTES DE CADA TEST COMPLETO -----  
+----- CORRER ESTO INDIVIDUALMENTE ANTES DE CADA TEST COMPLETO -----  CORREGIR LO
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
 ------------------------------------------------------------ Tablas 
-/*A veces necesitaremos ejecutar "BORRAR" dos veces (todavia no encontramos el por qué de esto)*/
-
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_ticket') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_ticket; end
@@ -54,7 +61,7 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'BI_REYES_DE_DATOS')
 BEGIN EXEC ('CREATE SCHEMA BI_REYES_DE_DATOS') END
 GO
-------------------------------------------------------------
+------
 CREATE TABLE BI_REYES_DE_DATOS.BI_Tiempo(
 	id_tiempo INT PRIMARY KEY IDENTITY(1,1),
 	anio INT NOT NULL, 
@@ -63,7 +70,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Tiempo(
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Ubicacion( -- == Domicilio
-	id_ubicacion INT PRIMARY KEY IDENTITY(1,1),
+	id_ubicacion INT PRIMARY KEY,
 	id_provincia INT NOT NULL,
 	id_localidad INT NOT NULL,
 	direccion varchar(70) not null
@@ -72,7 +79,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Ubicacion( -- == Domicilio
 CREATE TABLE BI_REYES_DE_DATOS.BI_Sucursal(
 	id_sucursal INT PRIMARY KEY IDENTITY(1,1),
 	sucursal_domicilio VARCHAR(100) NOT NULL,
-    sucursal_numero VARCHAR(50) NOT NULL -- solo el numero
+  sucursal_numero VARCHAR(50) NOT NULL -- solo el numero
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_Rango_Etario(
@@ -84,14 +91,15 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Rango_Etario(
 CREATE TABLE BI_REYES_DE_DATOS.BI_turno(
     id_turno INT PRIMARY KEY IDENTITY(1,1),
     turno_inicio TIME NOT NULL,
-	turno_final TIME NOT NULL
+		turno_final TIME NOT NULL
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_medio_de_pago(
     id_medio_de_pago INT PRIMARY KEY IDENTITY(1,1),
-	medio_de_pago_clasificacion VARCHAR(100) NOT NULL, -- credito / debito / efectivo / etc
-	medio_de_pago_detalle VARCHAR(100) NOT NULL,
+		medio_de_pago_clasificacion VARCHAR(100) NOT NULL, -- credito / debito / efectivo / etc
+		medio_de_pago_detalle VARCHAR(100) NOT NULL,
 );
+
 CREATE TABLE BI_REYES_DE_DATOS.BI_Producto_categoria (
 	id_producto_categoria INT PRIMARY KEY IDENTITY(1,1),
 	producto_categoria_detalle VARCHAR(50) NOT NULL,
@@ -101,98 +109,52 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_Producto_subcategoria (
 	id_producto_subcategoria INT PRIMARY KEY IDENTITY(1,1),
 	producto_subcategoria_detalle VARCHAR(50) NOT NULL,
 );
------ ----- ----- ----- ----- ----- 
------ TABLAS ADICIONALES -----
------ ----- ----- ----- ----- -----
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Caja(
-	id_caja INT PRIMARY KEY IDENTITY(1,1),
-	caja_numero INT NOT NULL,
-	caja_tipo VARCHAR(30) NOT NULL, 
-);
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Descuento (
-	descuento_codigo INT PRIMARY KEY NOT NULL,
-	descuento_descripcion VARCHAR(100) NOT NULL,
-	descuento_fecha_inicio DATE NOT NULL,
-	descuento_fecha_fin DATE NOT NULL,
-	descuento_valor_porcentual_a_aplicar DECIMAL(5, 2) NOT NULL,
-	descuento_tope DECIMAL(10, 2) NOT NULL,
-);
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Cliente (
-    id_cliente INT PRIMARY KEY IDENTITY(1,1),
-    cliente_nombre VARCHAR(50) not null,
-    cliente_apellido VARCHAR(50) not null,
-	cliente_id_domicilio int not null,
-    cliente_fecha_nacimiento date not null
-);
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Empleado (
-    id_empleado INT PRIMARY KEY IDENTITY(1,1),
-    id_sucursal INT NOT NULL,
-    empleado_nombre VARCHAR(15) NOT NULL,
-    empleado_apellido VARCHAR(30) NOT NULL,
-    empleado_fecha_nacimiento DATE not null
-);
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Producto (
-    id_producto INT PRIMARY KEY,
-	producto_codigo NVARCHAR(100) NOT NULL, -- PRODUCTO_NOMBRE
-    id_producto_categoria INT NOT NULL,
-    id_producto_subcategoria INT NOT NULL,
-    producto_precio DECIMAL(10, 2) NOT NULL   
-);
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Promocion(
-	id_promo INT PRIMARY KEY NOT NULL,
-	promo_descripcion VARCHAR(50) NOT NULL
-);
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_ticket(
-    id_ticket INT PRIMARY KEY IDENTITY(1,1),
-    ticket_numero VARCHAR(50) NOT NULL,
-    id_sucursal INT NOT NULL, 
-    id_tipo_comprobante INT NOT NULL,
-    id_producto INT NOT NULL,
-    item_ticket_cantidad INT NOT NULL,
-    item_ticket_precio INT NOT NULL
-);
------
+----- ----- ----- ----- ----- ----- ----- 
+----- CREACIÓN DE TABLAS-HECHOS ----- 
+----- ----- ----- ----- ----- ----- -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_envio (
     id_envio INT PRIMARY KEY IDENTITY(1,1),
-    id_ticket int not null,
-	id_cliente INT NOT NULL,
+  	id_tiempo int not null,
+	id_ubicacion int not null,
+	id_sucursal int not null,
+	id_rango_etario int not null,
+	id_turno int not null,
     envio_fecha_programada DATETIME NULL,
     envio_fecha_entrega DATETIME NOT NULL,
     envio_costo DECIMAL(10, 2) NOT NULL,
 );
------ /*Ticket*/
+-----
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta(
-    id_venta INT PRIMARY KEY IDENTITY(1,1),
-	id_ticket int not null,
-	venta_numero INT NOT NULL,
-	venta_id_tipo_comprobante INT NOT NULL,
-    venta_id_sucursal INT NOT NULL,
+  	id_venta INT PRIMARY KEY IDENTITY(1,1),
+  	id_tiempo INT NOT NULL,
+	id_ubicacion INT NOT NULL,
+	id_sucursal INT NOT NULL,
+	id_turno INT NOT NULL,
+	id_medio_de_pago INT NOT NULL,
+	--id_tipo_comprobante INT NOT NULL,
     venta_id_caja INT NOT NULL,
-    venta_id_empleado INT NOT NULL,
-    ticket_fecha_hora DATETIME NOT NULl,
-    venta_total DECIMAL(10, 2) NOT NULL,
-    ticket_total_descuento_aplicado DECIMAL(10, 2),
-	ticket_monto_total_envio DECIMAL(10, 2)
+    monto_ventas DECIMAL(10, 2) NOT NULL,
+    monto_descuentos_aplicados DECIMAL(10, 2),
 );
------ hechos
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_tiempo (
-	id_venta INT,
-    ticket_fecha_hora DATETIME,
-    envio_fecha_entrega DATE,
-    id_tiempo INT FOREIGN KEY (id_tiempo) REFERENCES BI_REYES_DE_DATOS.BI_Tiempo(id_tiempo)
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
+  	id_pago INT PRIMARY KEY IDENTITY(1,1),
+  	id_tiempo INT NOT NULL,
+	id_ubicacion INT NOT NULL,
+	id_sucursal INT NOT NULL,
+	id_rango_etario INT NOT NULL,
+	id_turno INT NOT NULL,
+	id_medio_de_pago INT NOT NULL,
+  	monto_pagos INT NOT NULL,
+	cantidad_pagos INT NOT NULL,
 );
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion (
-    id_venta INT PRIMARY KEY FOREIGN KEY (id_venta) REFERENCES BI_REYES_DE_DATOS.BI_hechos_venta(id_venta),
-    id_ubicacion INT FOREIGN KEY (id_ubicacion) REFERENCES BI_REYES_DE_DATOS.BI_Ubicacion(id_ubicacion),
-    id_provincia INT NOT NULL,
-    id_localidad INT NOT NULL,
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_promociones (
+  	id_promocion INT PRIMARY KEY IDENTITY(1,1),
+  	id_tiempo INT NOT NULL,
+	id_categoria_prod INT NOT NULL,
+	id_subcategoria INT NOT NULL,
+	cantidad_promocinoes INT NOT NULL,
 );
 ------------------------------------------------------------------------------------------------
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
@@ -268,9 +230,9 @@ BEGIN
 	
 END
 GO
------ ----- ----- ----- ----- ----- 
------  CREACIÓN DE MIGRACIONES -----
------ ----- ----- ----- ----- ----- 
+----- ----- ----- ----- ----- ----- ----- ----- 
+-----  CREACIÓN DE MIGRACIONES-DIMENSIONES -----
+----- ----- ----- ----- ----- ----- ----- ----- 
 ------------------------------------------------------------ Tiempo
 INSERT INTO BI_REYES_DE_DATOS.BI_Tiempo(
 	anio,
@@ -307,11 +269,13 @@ PRINT 'Migración de BI_Sucursal terminada'
 GO
 ------------------------------------------------------------ Ubicacion
 INSERT INTO BI_REYES_DE_DATOS.BI_Ubicacion(
+	id_ubicacion,
 	id_provincia,
 	id_localidad,
 	direccion
 )
 SELECT
+	d.id_domicilio,
 	d.id_provincia,
 	d.id_localidad,
 	d.domicilio_direccion
@@ -347,85 +311,40 @@ SELECT
 FROM REYES_DE_DATOS.Producto_subcategoria
 PRINT 'Migración de BI_categoria_subproducto terminada'
 GO
------------------------------------------------------------- Caja
-INSERT INTO BI_REYES_DE_DATOS.BI_Caja(
-	caja_numero,
-	caja_tipo
-)
-SELECT
-	caja_numero,
-	caja_tipo
-FROM REYES_DE_DATOS.Caja
-PRINT 'Migración de BI_Caja terminada'
-GO
------------------------------------------------------------- Descuento
-INSERT INTO BI_REYES_DE_DATOS.BI_Descuento (
-	descuento_codigo,
-	descuento_descripcion,
-	descuento_fecha_inicio,
-	descuento_fecha_fin,
-	descuento_valor_porcentual_a_aplicar,
-	descuento_tope
-)
-SELECT
-	descuento_codigo,
-	descuento_descripcion,
-	descuento_fecha_inicio,
-	descuento_fecha_fin,
-	descuento_valor_porcentual_a_aplicar,
-	descuento_tope
-FROM REYES_DE_DATOS.Descuento
-PRINT 'Migración de BI_Descuento terminada'
-GO
------------------------------------------------------------- Cliente
-INSERT INTO BI_REYES_DE_DATOS.BI_Cliente(
-    cliente_nombre,
-    cliente_apellido,
-	cliente_id_domicilio,
-    cliente_fecha_nacimiento
-)
-SELECT
-	cliente_nombre,
-    cliente_apellido,
-	c.cliente_id_domicilio,
-    c.cliente_fecha_nacimiento
-FROM REYES_DE_DATOS.Cliente c;
-PRINT 'Migración de BI_Cliente terminada'
-GO
------------------------------------------------------------- Producto
-INSERT INTO BI_REYES_DE_DATOS.BI_Producto(
-	id_producto,
-	producto_codigo, -- PRODUCTO_NOMBRE
-    id_producto_categoria,
-    id_producto_subcategoria,
-    producto_precio
-)
-SELECT 
-	p.id_producto,
-	p.producto_codigo,
-    p.id_producto_categoria,
-    p.id_producto_subcategoria,
-    p.producto_precio
-FROM REYES_DE_DATOS.Producto p;
-PRINT 'Migración de BI_Producto terminada'
-GO
------------------------------------------------------------- Empleado
-INSERT INTO BI_REYES_DE_DATOS.BI_Empleado (
-    id_sucursal,
-    empleado_nombre,
-    empleado_apellido,
-    empleado_fecha_nacimiento
-    
-)
-SELECT
+----- ----- ----- ----- ----- ----- ----- ----- 
+-----  CREACIÓN DE MIGRACIONES-HECHOS -----
+----- ----- ----- ----- ----- ----- ----- -----
+------------------------------------------------------------ Envio
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_envio (
+  	id_tiempo,
+	id_ubicacion,
 	id_sucursal,
-    empleado_nombre,
-    empleado_apellido,
-	empleado_fecha_nacimiento
-FROM REYES_DE_DATOS.Empleado
-PRINT 'Migración de BI_Empleado terminada'
+	id_rango_etario,
+	id_turno,
+    envio_fecha_programada,
+    envio_fecha_entrega,
+    envio_costo
+)
+SELECT
+	t.id_tiempo,
+	u.id_ubicacion,
+	s.id_sucursal,
+	BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
+	BI_REYES_DE_DATOS.turno(CAST(e.envio_fecha_entrega AS TIME)),
+	e.envio_fecha_programada,
+	e.envio_fecha_entrega,
+	e.envio_costo
+FROM REYES_DE_DATOS.Envio e
+	join BI_REYES_DE_DATOS.BI_Tiempo t on 
+		year(e.envio_fecha_entrega) = t.anio
+		and month(e.envio_fecha_entrega) = t.mes
+		and BI_REYES_DE_DATOS.cuatrimestre(month(e.envio_fecha_entrega)) = t.cuatrimestre
+	join REYES_DE_DATOS.Cliente c on c.id_cliente = e.id_cliente
+	join BI_REYES_DE_DATOS.BI_Ubicacion u on c.cliente_id_domicilio = u.id_ubicacion
+	join BI_REYES_DE_DATOS.BI_Sucursal s on s.sucursal_domicilio = u.direccion
+PRINT 'Migración de BI_hechos_envio terminada'
 GO
------------------------------------------------------------- Ticket / Venta -- TITO
+------------------------------------------------------------ Venta
 INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta(
 	id_ticket,
 	venta_numero,
@@ -454,43 +373,6 @@ FROM REYES_DE_DATOS.Ticket t
     JOIN REYES_DE_DATOS.Pago p on x.id_pago = p.id_pago;
 PRINT 'Migración de BI_hechos_venta terminada' --si tira error aca todavia no se que es, no tiene sentido porque no esta vinculada con producto
 GO
------------------------------------------------------------- Item Ticket
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_ticket -- error no se porque
-(
-    ticket_numero,
-    id_sucursal,
-    id_tipo_comprobante,
-    id_producto,
-    item_ticket_cantidad,
-    item_ticket_precio
-)
-SELECT
-	t.ticket_numero,
-    id_sucursal,
-    id_tipo_comprobante,
-    id_producto,
-    item_ticket_cantidad,
-    item_ticket_precio
-FROM REYES_DE_DATOS.Item_Ticket t
-PRINT 'Migración de BI_hechos_ticket terminada'
-GO --kk esto no se que error tiene
------------------------------------------------------------- Envio
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_envio ( --error no se porque
-    id_ticket,
-    id_cliente,
-    envio_fecha_programada,
-    envio_fecha_entrega,
-    envio_costo
-)
-SELECT
-	e.id_ticket,
-    e.id_cliente,
-    e.envio_fecha_programada,
-    e.envio_fecha_entrega,
-    e.envio_costo
-FROM REYES_DE_DATOS.Envio e
-PRINT 'Migración de BI_hechos_envio terminada'
-GO
 ------------------------------------------------------------ Promocion
 INSERT INTO BI_REYES_DE_DATOS.BI_Promocion(
 	id_promo,
@@ -505,51 +387,12 @@ GO
 ----- ----- ----- ----- ----- 
 ----- CREACION DE HECHOS ----- 
 ----- ----- ----- ----- -----
------------------------------------------------------------- hechos venta tiempo
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_tiempo (
-	id_venta,
-    ticket_fecha_hora,
-    envio_fecha_entrega,
-    id_tiempo
-)
-SELECT
-    v.id_venta,
-    v.ticket_fecha_hora,
-    e.envio_fecha_entrega,
-    t.id_tiempo
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-	JOIN BI_REYES_DE_DATOS.BI_hechos_envio e ON v.id_ticket = e.id_ticket
-	JOIN BI_REYES_DE_DATOS.BI_tiempo t ON YEAR(v.ticket_fecha_hora) = t.anio 
-		AND MONTH(v.ticket_fecha_hora) = t.mes
-		AND 
-			CASE 
-				WHEN MONTH(v.ticket_fecha_hora) IN (1, 2, 3, 4) THEN 1
-				WHEN MONTH(v.ticket_fecha_hora) IN (5, 6, 7, 8) THEN 2
-				WHEN MONTH(v.ticket_fecha_hora) IN (9, 10, 11, 12) THEN 3
-			END = t.cuatrimestre;
-PRINT 'Migración de BI_hechos_venta_tiempo terminada'
-GO
------------------------------------------------------------- hechos venta ubicacion
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion (
-    id_venta,
-    id_ubicacion,
-    id_provincia,
-    id_localidad
-)
-SELECT
-    v.id_venta,
-    u.id_ubicacion,
-    u.id_provincia,
-    u.id_localidad
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
-	join BI_REYES_DE_DATOS.BI_Ubicacion u on s.sucursal_domicilio = u.direccion
-PRINT 'Migración de BI_hechos_venta_ubicacion terminada'
-GO
+
 ----- ----- ----- ----- ----- 
 ----- CREACION DE VIEWS ----- 
 ----- ----- ----- ----- -----
------ 
+-----
+--ok
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
 CREATE VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual AS
@@ -570,6 +413,7 @@ GROUP BY
     l.localidad_nombre;
 GO
 ----- 
+--
 -- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio AS
@@ -857,3 +701,150 @@ select * from BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas
 select * from BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario
 --12
 select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+/*
+------------------------------------------------------------ hechos venta tiempo
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_tiempo (
+	id_venta,
+    ticket_fecha_hora,
+    envio_fecha_entrega,
+    id_tiempo
+)
+SELECT
+    v.id_venta,
+    v.ticket_fecha_hora,
+    e.envio_fecha_entrega,
+    t.id_tiempo
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
+	JOIN BI_REYES_DE_DATOS.BI_hechos_envio e ON v.id_ticket = e.id_ticket
+	JOIN BI_REYES_DE_DATOS.BI_tiempo t ON YEAR(v.ticket_fecha_hora) = t.anio 
+		AND MONTH(v.ticket_fecha_hora) = t.mes
+		AND 
+			CASE 
+				WHEN MONTH(v.ticket_fecha_hora) IN (1, 2, 3, 4) THEN 1
+				WHEN MONTH(v.ticket_fecha_hora) IN (5, 6, 7, 8) THEN 2
+				WHEN MONTH(v.ticket_fecha_hora) IN (9, 10, 11, 12) THEN 3
+			END = t.cuatrimestre;
+PRINT 'Migración de BI_hechos_venta_tiempo terminada'
+GO
+------------------------------------------------------------ hechos venta ubicacion
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_ubicacion (
+    id_venta,
+    id_ubicacion,
+    id_provincia,
+    id_localidad
+)
+SELECT
+    v.id_venta,
+    u.id_ubicacion,
+    u.id_provincia,
+    u.id_localidad
+FROM BI_REYES_DE_DATOS.BI_hechos_venta v
+	join BI_REYES_DE_DATOS.BI_Sucursal s on v.venta_id_sucursal = s.id_sucursal
+	join BI_REYES_DE_DATOS.BI_Ubicacion u on s.sucursal_domicilio = u.direccion
+PRINT 'Migración de BI_hechos_venta_ubicacion terminada'
+GO
+*/
+/*
+------------------------------------------------------------ Caja
+INSERT INTO BI_REYES_DE_DATOS.BI_Caja(
+	caja_numero,
+	caja_tipo
+)
+SELECT
+	caja_numero,
+	caja_tipo
+FROM REYES_DE_DATOS.Caja
+PRINT 'Migración de BI_Caja terminada'
+GO
+------------------------------------------------------------ Descuento
+INSERT INTO BI_REYES_DE_DATOS.BI_Descuento (
+	descuento_codigo,
+	descuento_descripcion,
+	descuento_fecha_inicio,
+	descuento_fecha_fin,
+	descuento_valor_porcentual_a_aplicar,
+	descuento_tope
+)
+SELECT
+	descuento_codigo,
+	descuento_descripcion,
+	descuento_fecha_inicio,
+	descuento_fecha_fin,
+	descuento_valor_porcentual_a_aplicar,
+	descuento_tope
+FROM REYES_DE_DATOS.Descuento
+PRINT 'Migración de BI_Descuento terminada'
+GO
+------------------------------------------------------------ Cliente
+INSERT INTO BI_REYES_DE_DATOS.BI_Cliente(
+    cliente_nombre,
+    cliente_apellido,
+	cliente_id_domicilio,
+    cliente_fecha_nacimiento
+)
+SELECT
+	cliente_nombre,
+    cliente_apellido,
+	c.cliente_id_domicilio,
+    c.cliente_fecha_nacimiento
+FROM REYES_DE_DATOS.Cliente c;
+PRINT 'Migración de BI_Cliente terminada'
+GO
+------------------------------------------------------------ Producto
+INSERT INTO BI_REYES_DE_DATOS.BI_Producto(
+	id_producto,
+	producto_codigo, -- PRODUCTO_NOMBRE
+    id_producto_categoria,
+    id_producto_subcategoria,
+    producto_precio
+)
+SELECT 
+	p.id_producto,
+	p.producto_codigo,
+    p.id_producto_categoria,
+    p.id_producto_subcategoria,
+    p.producto_precio
+FROM REYES_DE_DATOS.Producto p;
+PRINT 'Migración de BI_Producto terminada'
+GO
+------------------------------------------------------------ Empleado
+INSERT INTO BI_REYES_DE_DATOS.BI_Empleado (
+    id_sucursal,
+    empleado_nombre,
+    empleado_apellido,
+    empleado_fecha_nacimiento
+    
+)
+SELECT
+	id_sucursal,
+    empleado_nombre,
+    empleado_apellido,
+	empleado_fecha_nacimiento
+FROM REYES_DE_DATOS.Empleado
+PRINT 'Migración de BI_Empleado terminada'
+GO
+------------------------------------------------------------ Item Ticket
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_ticket -- error no se porque
+(
+    ticket_numero,
+    id_sucursal,
+    id_tipo_comprobante,
+    id_producto,
+    item_ticket_cantidad,
+    item_ticket_precio
+)
+SELECT
+	t.ticket_numero,
+    id_sucursal,
+    id_tipo_comprobante,
+    id_producto,
+    item_ticket_cantidad,
+    item_ticket_precio
+FROM REYES_DE_DATOS.Item_Ticket t
+PRINT 'Migración de BI_hechos_ticket terminada'
+GO --kk esto no se que error tiene
+*/
+
