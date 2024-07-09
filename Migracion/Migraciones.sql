@@ -192,7 +192,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
 ); 
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_promociones (
-  	id_promocion INT PRIMARY KEY,
+  	id_promocion INT NOT NULL,
 	id_categoria_prod INT NOT NULL,
 	id_subcategoria INT NOT NULL,
 	cantidad_promociones INT NOT NULL,
@@ -394,7 +394,6 @@ SELECT
 	t.id_tiempo,
 	tk.id_sucursal,
 	BI_REYES_DE_DATOS.turno(CAST(p.pago_fecha AS TIME)),
-	BI_REYES_DE_DATOS.rangoEtario(CAST(p.pago_fecha AS TIME)),
 	p.id_tipo_medio_de_pago,
 	sum(p.pago_importe),
 	count(p.pago_importe)
@@ -442,7 +441,7 @@ GO
 ----- CREACION DE VIEWS ----- 
 ----- ----- ----- ----- -----
 -----
---ok
+-----
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
 CREATE VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual AS
@@ -461,7 +460,6 @@ GROUP BY
     l.localidad_nombre;
 GO
 ----- 
---
 -- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio AS
@@ -478,7 +476,7 @@ GROUP BY
     t.anio;
 GO
 ----- 
--- 3) REVISAR Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
+-- 3) Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre AS
 SELECT
@@ -505,7 +503,7 @@ GROUP BY
     t.cuatrimestre,
 	t.anio;
 GO
------ 
+----- revisar
 -- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año
 -----
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad AS
@@ -526,7 +524,7 @@ GROUP BY
     t.mes,
     t.anio;
 GO
------ 
+----- revisar
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes AS
@@ -557,7 +555,7 @@ GROUP BY
 	t.cuatrimestre,
 	pc.producto_categoria_detalle;
 GO
------ 
+----- revisar
 -- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
 -----
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios AS
@@ -575,7 +573,7 @@ GROUP BY
     t.anio,
     t.mes;
 GO
------ 
+----- revisar 
 -- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario AS
@@ -591,7 +589,7 @@ GROUP BY
 	t.cuatrimestre,
     t.anio;
 GO
------ 
+----- revisar
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio AS
@@ -605,11 +603,11 @@ FROM BI_REYES_DE_DATOS.BI_hechos_envio e
 GROUP BY
     l.localidad_nombre;
 GO
------ REVISAR
+----- revisar
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
 -----
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
-SELECT top 99
+SELECT top 3
     p.id_sucursal as Sucursal,
     sum(p.monto_pagos) as MayorImporteCuotas,
     mp.medio_de_pago_detalle as MedioDePago,
@@ -625,18 +623,18 @@ GROUP BY
 	t.anio,
 	t.mes;
 GO
------ REVISAR
+----- 
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario AS
 SELECT
-    p.id_rango_etario AS RangoEtario,
-    AVG(p.monto_pagos) AS PromedioImporteCuota
+    v.id_rango_etario AS RangoEtario,
+    AVG(v.monto_ventas) AS PromedioImporteCuota
 FROM BI_REYES_DE_DATOS.BI_hechos_venta v
 GROUP BY
-   p.id_rango_etario;
+   v.id_rango_etario;
 GO
------ 
+----- revisar
 -- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago AS
