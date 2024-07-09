@@ -1,8 +1,11 @@
+/* RE-ENTREGA DE MODELO BI */
 /*SI SALTA ERROR DE FOREIGN KEY CORRER DOS VECES EL CODIGO*/
 
 /*
+--ERRORES ENVIADOS PARA CORREGIR--
 No identifica correctamente los hechos. Los hechos son: Ventas / Promociones / Pagos / Envios.
-Las tablas de hechos deben tener información agrupada y sumarizada por sus dimensiones y no contener información del modelo relacional en particular. Si la tabla del modelo relacional y la tabla de hechos tienen la misma cantidad de registros está mal. 
+Las tablas de hechos deben tener información agrupada y sumarizada por sus dimensiones y no contener información del modelo relacional en particular.
+Si la tabla del modelo relacional y la tabla de hechos tienen la misma cantidad de registros está mal. 
 En el hecho de ventas no pueden tener información del modelo relación de los tickets específicos.
 La dimensión Producto no es correcta, no pueden identificar un producto en particular.
 La dimensión promoción no es correcta porque debería ser un hecho
@@ -25,6 +28,8 @@ if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYE
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_envio') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_envio; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_pago') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_pago; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_promociones') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_promociones; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_categoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_categoria; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta_medio_pago') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta_medio_pago; end
 GO
 ------------------------------------------------------------ Borramos todas las vistas
 IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL  BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual; END 
@@ -168,14 +173,26 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta(
 	id_sucursal INT NOT NULL,
 	id_turno varchar(50) NOT NULL,
 	id_rango_etario varchar(30) NOT NULL,
-	id_categoria_prod INT NOT NULL,
-	id_subcategoria INT NOT NULL,
-	id_medio_de_pago INT NOT NULL,
     venta_id_caja INT NOT NULL,
     monto_ventas DECIMAL(10, 2) NOT NULL,
 	cantidad_ventas int not null,
     monto_descuentos_aplicados DECIMAL(10, 2),
 	cantidad_descuentos int not null
+);
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_categoria(
+  	id_venta_categoria INT PRIMARY KEY IDENTITY(1,1),
+  	id_tiempo INT NOT NULL,
+	id_categoria_prod INT NOT NULL,
+	monto_descuentos_aplicados DECIMAL(15, 2),
+);
+-----
+CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta_medio_pago(
+  	id_venta INT PRIMARY KEY IDENTITY(1,1),
+  	id_tiempo INT NOT NULL,
+	id_medio_de_pago INT NOT NULL,
+    monto_ventas DECIMAL(10, 2) NOT NULL,
+	monto_descuentos_aplicados DECIMAL(10, 2),
 );
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
@@ -328,9 +345,6 @@ INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta(
 	id_sucursal,
 	id_turno,
 	id_rango_etario,
-	id_categoria_prod,
-	id_subcategoria,
-	id_medio_de_pago,
     venta_id_caja,
     monto_ventas,
 	cantidad_ventas,
@@ -343,9 +357,6 @@ SELECT
 	s.id_sucursal,
 	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
 	BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
-	p.id_producto_categoria,
-	p.id_producto_subcategoria,
-	mp.id_tipo_medio_pago,
 	t.id_caja,
 	sum(t.ticket_total),
 	count(t.ticket_total),
@@ -359,18 +370,56 @@ FROM REYES_DE_DATOS.Ticket t
 	JOIN BI_REYES_DE_DATOS.BI_Sucursal s on s.id_sucursal = t.id_sucursal
 	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u on u.direccion = s.sucursal_domicilio
 	JOIN REYES_DE_DATOS.Empleado e on t.id_empleado = e.id_empleado
-	JOIN REYES_DE_DATOS.Item_Ticket i on i.ticket_numero= t.ticket_numero
-	JOIN REYES_DE_DATOS.Producto p on i.id_producto = p.id_producto
-	JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
-	JOIN REYES_DE_DATOS.Pago pg on x.id_pago = pg.id_pago
-	JOIN REYES_DE_DATOS.Tipo_medio_de_pago mp on pg.id_tipo_medio_de_pago = mp.id_tipo_medio_pago
 GROUP BY tp.id_tiempo,
 	u.id_ubicacion,
 	s.id_sucursal,
 	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
 	BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
+	t.id_caja
+PRINT 'Migración de BI_hechos_venta terminada'
+GO
+------------------------------------------------------------ Venta Categoria
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_categoria(
+	id_tiempo,
+	id_categoria_prod,
+	monto_descuentos_aplicados
+)
+SELECT
+	tp.id_tiempo,
 	p.id_producto_categoria,
-	p.id_producto_subcategoria,
+	sum(t.ticket_total_descuento_aplicado)
+FROM REYES_DE_DATOS.Ticket t
+	JOIN BI_REYES_DE_DATOS.BI_Tiempo tp on
+		year(t.ticket_fecha_hora) = tp.anio
+		and month(t.ticket_fecha_hora) = tp.mes
+		and BI_REYES_DE_DATOS.cuatrimestre(month(t.ticket_fecha_hora)) = tp.cuatrimestre
+	JOIN REYES_DE_DATOS.Item_Ticket i on i.ticket_numero+i.id_sucursal+i.id_tipo_comprobante = t.ticket_numero+t.id_sucursal+t.id_tipo_comprobante
+	JOIN REYES_DE_DATOS.Producto p on i.id_producto = p.id_producto
+GROUP BY tp.id_tiempo,
+	p.id_producto_categoria
+PRINT 'Migración de BI_hechos_venta_categoria terminada'
+GO	
+------------------------------------------------------------ Venta medio de pago
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_medio_pago(
+	id_tiempo,
+	id_medio_de_pago,
+    monto_ventas,
+	monto_descuentos_aplicados
+)
+SELECT
+	tp.id_tiempo,
+	mp.id_tipo_medio_pago,
+	sum(t.ticket_total),
+	sum(t.ticket_total_descuento_aplicado)
+FROM REYES_DE_DATOS.Ticket t
+	JOIN BI_REYES_DE_DATOS.BI_Tiempo tp on
+		year(t.ticket_fecha_hora) = tp.anio
+		and month(t.ticket_fecha_hora) = tp.mes
+		and BI_REYES_DE_DATOS.cuatrimestre(month(t.ticket_fecha_hora)) = tp.cuatrimestre
+	JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
+	JOIN REYES_DE_DATOS.Pago pg on x.id_pago = pg.id_pago
+	JOIN REYES_DE_DATOS.Tipo_medio_de_pago mp on pg.id_tipo_medio_de_pago = mp.id_tipo_medio_pago
+GROUP BY tp.id_tiempo,
 	mp.id_tipo_medio_pago,
 	t.id_caja
 PRINT 'Migración de BI_hechos_venta terminada'
@@ -404,8 +453,6 @@ INSERT INTO BI_REYES_DE_DATOS.BI_hechos_pago(
 	id_medio_de_pago,
   	monto_pagos,
 	cantidad_pagos
-	--id_ubicacion,
-	--id_rango_etario
 )
 SELECT
 	t.id_tiempo,
@@ -429,14 +476,9 @@ GROUP BY
 	p.id_tipo_medio_de_pago
 PRINT 'Migración de BI_Pago terminada'
 GO
------ ----- ----- ----- ----- ----- ----- 
------ CREACION DE MIGRACIONES EXTRAS ----- 
------ ----- ----- ----- ----- ----- -----
-
 ----- ----- ----- ----- ----- 
 ----- CREACION DE VIEWS ----- 
 ----- ----- ----- ----- -----
------
 -----
 -- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
 -----
@@ -499,7 +541,7 @@ GROUP BY
     t.cuatrimestre,
 	t.anio;
 GO
------ revisar ALAN
+-----
 -- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año
 -----
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad AS
@@ -538,18 +580,18 @@ GO
 -- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
 -----
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento AS
-SELECT top 3
+SELECT
     pc.producto_categoria_detalle as Categoria,
 	sum(v.monto_descuentos_aplicados) as SumatoriaDescuentosAplicados,
 	t.anio as Anio,
     t.cuatrimestre as Cuatrimestre
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta_categoria v
 	join BI_REYES_DE_DATOS.BI_Tiempo t on v.id_tiempo = t.id_tiempo
 	join BI_REYES_DE_DATOS.BI_Producto_categoria pc on v.id_categoria_prod = pc.id_producto_categoria
 GROUP BY
+	pc.producto_categoria_detalle,
     t.anio,
-	t.cuatrimestre,
-	pc.producto_categoria_detalle;
+	t.cuatrimestre;
 GO
 -----
 -- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
@@ -621,6 +663,8 @@ GROUP BY
 GO
 /*
 ------------------------------------------------------------------------------------------------------------
+----- ACLARACION -----
+------------------------------------------------------------------------------------------------------------
 La resolucion anterior muestra solamente 1 sucursal (al agrupar por mes y año esta acapara el top)
 Si deseamos ver top de sucursales distintas debemos remover el mes y año, quedando el select de esta manera:
 ------------------------------------------------------------------------------------------------------------
@@ -660,7 +704,7 @@ SELECT
     t.anio as Año,
     t.cuatrimestre as Cuatrimestre,
     (sum(v.monto_descuentos_aplicados) * 100) / sum(v.monto_ventas) as Porcentaje
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
+FROM BI_REYES_DE_DATOS.BI_hechos_venta_medio_pago v
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
 	JOIN BI_REYES_DE_DATOS.BI_medio_de_pago mp on v.id_medio_de_pago = mp.id_medio_de_pago
 GROUP BY
