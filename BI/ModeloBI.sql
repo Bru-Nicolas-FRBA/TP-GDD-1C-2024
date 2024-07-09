@@ -139,9 +139,9 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta(
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
   	id_pago INT PRIMARY KEY IDENTITY(1,1),
   	id_tiempo INT NOT NULL,
-	id_ubicacion INT NOT NULL,
-	id_sucursal INT NOT NULL,
-	id_rango_etario INT NOT NULL,
+	--id_ubicacion INT NOT NULL,
+	--id_sucursal INT NOT NULL,
+	--id_rango_etario INT NOT NULL,
 	id_turno INT NOT NULL,
 	id_medio_de_pago INT NOT NULL,
   	monto_pagos INT NOT NULL,
@@ -150,10 +150,9 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_promociones (
   	id_promocion INT PRIMARY KEY IDENTITY(1,1),
-  	id_tiempo INT NOT NULL,
 	id_categoria_prod INT NOT NULL,
 	id_subcategoria INT NOT NULL,
-	cantidad_promocinoes INT NOT NULL,
+	cantidad_promociones INT NOT NULL,
 );
 ------------------------------------------------------------------------------------------------
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
@@ -332,7 +331,7 @@ SELECT
 	BI_REYES_DE_DATOS.turno(CAST(e.envio_fecha_entrega AS TIME)),
 	e.envio_fecha_programada,
 	e.envio_fecha_entrega,
-	e.envio_costo
+	sum(e.envio_costo)
 FROM REYES_DE_DATOS.Envio e
 	join BI_REYES_DE_DATOS.BI_Tiempo t on 
 		year(e.envio_fecha_entrega) = t.anio
@@ -341,6 +340,13 @@ FROM REYES_DE_DATOS.Envio e
 	join REYES_DE_DATOS.Cliente c on c.id_cliente = e.id_cliente
 	join BI_REYES_DE_DATOS.BI_Ubicacion u on c.cliente_id_domicilio = u.id_ubicacion
 	join BI_REYES_DE_DATOS.BI_Sucursal s on s.sucursal_domicilio = u.direccion
+group by t.id_tiempo,
+	u.id_ubicacion,
+	s.id_sucursal,
+	BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
+	BI_REYES_DE_DATOS.turno(CAST(e.envio_fecha_entrega AS TIME)),
+	e.envio_fecha_programada,
+	e.envio_fecha_entrega
 PRINT 'Migración de BI_hechos_envio terminada'
 GO
 ------------------------------------------------------------ Venta
@@ -374,23 +380,56 @@ GROUP BY tp.id_tiempo,
 	s.id_sucursal,
 	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
 	t.id_caja
-PRINT 'Migración de BI_hechos_venta terminada' --si tira error aca todavia no se que es, no tiene sentido porque no esta vinculada con producto
-GO
------------------------------------------------------------- Promocion
-INSERT INTO BI_REYES_DE_DATOS.BI_Promocion(
-	id_promo,
-	promo_descripcion
-)
-SELECT
-	id_promo,
-	promo_descripcion
-FROM REYES_DE_DATOS.Promocion
-PRINT 'Migración de BI_Promo terminada'
+PRINT 'Migración de BI_hechos_venta terminada'
 GO
 ------------------------------------------------------------ Pago
------ ----- ----- ----- ----- 
------ CREACION DE HECHOS ----- 
------ ----- ----- ----- -----
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_pago(
+	id_tiempo,
+	--id_ubicacion,
+	--id_sucursal,
+	--id_rango_etario,
+	id_turno,
+	id_medio_de_pago,
+  	monto_pagos,
+	cantidad_pagos
+)
+SELECT
+	t.id_tiempo,
+	BI_REYES_DE_DATOS.turno(CAST(p.pago_fecha AS TIME)),
+	p.id_tipo_medio_de_pago,
+	sum(p.pago_importe),
+	count(p.pago_importe)
+FROM REYES_DE_DATOS.Pago p
+	JOIN BI_REYES_DE_DATOS.BI_Tiempo t on
+		year(p.pago_fecha) = t.anio
+		and month(p.pago_fecha) = t.mes
+		and BI_REYES_DE_DATOS.cuatrimestre(month(p.pago_fecha)) = t.cuatrimestre
+group by
+	t.id_tiempo,
+	BI_REYES_DE_DATOS.turno(CAST(p.pago_fecha AS TIME)),
+	p.id_tipo_medio_de_pago
+PRINT 'Migración de BI_Pago terminada'
+GO
+------------------------------------------------------------ Promocion
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_promociones(
+  	id_promocion,
+	id_categoria_prod,
+	id_subcategoria,
+	cantidad_promociones
+)
+SELECT
+	p.id_promo,
+	pr.id_producto_categoria,
+	pr.id_producto_subcategoria,
+	count(*)
+FROM REYES_DE_DATOS.Promocion p
+	join REYES_DE_DATOS.Item_Ticket it on it.id_promocion = p.id_promo
+	join REYES_DE_DATOS.Producto pr on pr.id_producto = it.id_producto
+PRINT 'Migración de BI_Promo terminada'
+GO
+----- ----- ----- ----- ----- ----- ----- 
+----- CREACION DE MIGRACIONES EXTRAS ----- 
+----- ----- ----- ----- ----- ----- -----
 
 ----- ----- ----- ----- ----- 
 ----- CREACION DE VIEWS ----- 
