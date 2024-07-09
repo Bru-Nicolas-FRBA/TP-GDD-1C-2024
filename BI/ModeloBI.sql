@@ -746,7 +746,10 @@ select * from BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario
 select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago
 
 
-------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------
+-- CODIGO MUERTO --
+---------------------
+
 /*
 ------------------------------------------------------------ hechos venta tiempo
 INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta_tiempo (
