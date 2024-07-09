@@ -181,10 +181,8 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta(
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
   	id_pago INT PRIMARY KEY IDENTITY(1,1),
   	id_tiempo INT NOT NULL,
-	--id_ubicacion INT NOT NULL,
 	id_sucursal INT NOT NULL,
 	id_turno varchar(50) NOT NULL,
-	--id_rango_etario varchar(30) NOT NULL,
 	id_medio_de_pago INT NOT NULL,
   	monto_pagos INT NOT NULL,
 	cantidad_pagos INT NOT NULL,
@@ -192,6 +190,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
 -----
 CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_promociones (
   	id_promocion INT NOT NULL,
+	id_venta INT NOT NULL,
 	id_categoria_prod INT NOT NULL,
 	id_subcategoria INT NOT NULL,
 	cantidad_promociones INT NOT NULL,
@@ -200,6 +199,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_promociones (
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
 ------------------------------------------------------------------------------------------------
 ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_venta ADD CONSTRAINT FK_id_sucursal_hechos_venta FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+ALTER TABLE BI_REYES_DE_DATOS.BIhechos_promociones ADD CONSTRAINT FK_id_sucursal_hechos_promcion FOREIGN KEY (id_venta) REFERENCES BI_REYES_DE_DATOS.BI_hechos_venta(id_venta)
 GO
 ----- ----- ----- ----- ----- ----- ----- ----- 
 -----  CREACIÓN DE MIGRACIONES-DIMENSIONES -----
@@ -372,11 +372,32 @@ GROUP BY tp.id_tiempo,
 	s.id_sucursal,
 	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
 	BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
-	p.id_producto_categoria,
-	p.id_producto_subcategoria,
+	--p.id_producto_categoria,
+	--p.id_producto_subcategoria,
 	mp.id_tipo_medio_pago,
 	t.id_caja
 PRINT 'Migración de BI_hechos_venta terminada'
+GO
+------------------------------------------------------------ Promocion
+INSERT INTO BI_REYES_DE_DATOS.BI_hechos_promociones(
+  	id_promocion,
+	id_categoria_prod,
+	id_subcategoria,
+	cantidad_promociones
+)
+SELECT DISTINCT
+	p.id_promo,
+	pr.id_producto_categoria,
+	pr.id_producto_subcategoria,
+	count(*)
+FROM REYES_DE_DATOS.Promocion p
+	join REYES_DE_DATOS.Item_Ticket i on i.id_promocion = p.id_promo
+	join REYES_DE_DATOS.Producto pr on pr.id_producto = i.id_producto
+GROUP BY
+	p.id_promo,
+	pr.id_producto_categoria,
+	pr.id_producto_subcategoria
+PRINT 'Migración de BI_Promo terminada'
 GO
 ------------------------------------------------------------ Pago
 INSERT INTO BI_REYES_DE_DATOS.BI_hechos_pago(
@@ -410,27 +431,6 @@ GROUP BY
 	BI_REYES_DE_DATOS.turno(CAST(p.pago_fecha AS TIME)),
 	p.id_tipo_medio_de_pago
 PRINT 'Migración de BI_Pago terminada'
-GO
------------------------------------------------------------- Promocion
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_promociones(
-  	id_promocion,
-	id_categoria_prod,
-	id_subcategoria,
-	cantidad_promociones
-)
-SELECT DISTINCT
-	p.id_promo,
-	pr.id_producto_categoria,
-	pr.id_producto_subcategoria,
-	count(*)
-FROM REYES_DE_DATOS.Promocion p
-	join REYES_DE_DATOS.Item_Ticket it on it.id_promocion = p.id_promo
-	join REYES_DE_DATOS.Producto pr on pr.id_producto = it.id_producto
-GROUP BY
-	p.id_promo,
-	pr.id_producto_categoria,
-	pr.id_producto_subcategoria
-PRINT 'Migración de BI_Promo terminada'
 GO
 ----- ----- ----- ----- ----- ----- ----- 
 ----- CREACION DE MIGRACIONES EXTRAS ----- 
@@ -502,7 +502,7 @@ GROUP BY
     t.cuatrimestre,
 	t.anio;
 GO
------ revisar
+----- revisar ALAN
 -- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año
 -----
 CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad AS
@@ -523,7 +523,7 @@ GROUP BY
     t.mes,
     t.anio;
 GO
------ revisar
+-----
 -- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes AS
@@ -554,7 +554,7 @@ GROUP BY
 	t.cuatrimestre,
 	pc.producto_categoria_detalle;
 GO
------ revisar
+-----
 -- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
 -----
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios AS
@@ -572,7 +572,7 @@ GROUP BY
     t.anio,
     t.mes;
 GO
------ revisar 
+----- 
 -- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario AS
@@ -588,7 +588,7 @@ GROUP BY
 	t.cuatrimestre,
     t.anio;
 GO
------ revisar
+-----
 -- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio AS
@@ -602,7 +602,7 @@ FROM BI_REYES_DE_DATOS.BI_hechos_envio e
 GROUP BY
     l.localidad_nombre;
 GO
------ revisar
+-----
 -- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
 -----
 CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
@@ -622,6 +622,27 @@ GROUP BY
 	t.anio,
 	t.mes;
 GO
+/*
+------------------------------------------------------------------------------------------------------------
+La resolucion anterior muestra solamente 1 sucursal (al agrupar por mes y año esta acapara el top)
+Si deseamos ver top de sucursales distintas debemos remover el mes y año, quedando el select de esta manera:
+------------------------------------------------------------------------------------------------------------
+SELECT top 3
+    p.id_sucursal as Sucursal,
+    sum(p.monto_pagos) as MayorImporteCuotas,
+    mp.medio_de_pago_detalle as MedioDePago
+	--t.mes as Mes,
+    --t.anio as Anio
+FROM BI_REYES_DE_DATOS.BI_hechos_pago p
+	JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON p.id_tiempo = t.id_tiempo	
+    join BI_REYES_DE_DATOS.BI_medio_de_pago mp on p.id_medio_de_pago = mp.id_medio_de_pago
+where mp.medio_de_pago_detalle != 'Efectivo'
+GROUP BY
+    p.id_sucursal,
+    mp.medio_de_pago_detalle;
+	--t.anio,
+	--t.mes;
+*/
 ----- 
 -- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
 ----- 
@@ -633,7 +654,7 @@ FROM BI_REYES_DE_DATOS.BI_hechos_venta v
 GROUP BY
    v.id_rango_etario;
 GO
------ revisar
+-----
 -- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
 ----- 
 CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago AS
@@ -641,7 +662,7 @@ SELECT
     mp.medio_de_pago_detalle as MedioPago,
     t.anio as Año,
     t.cuatrimestre as Cuatrimestre,
-    (sum(v.cantidad_descuentos) * 100) / sum(v.cantidad_ventas) as Porcentaje
+    (sum(v.monto_descuentos_aplicados) * 100) / sum(v.monto_ventas) as Porcentaje
 FROM BI_REYES_DE_DATOS.BI_hechos_venta v
     JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
 	JOIN BI_REYES_DE_DATOS.BI_medio_de_pago mp on v.id_medio_de_pago = mp.id_medio_de_pago
@@ -650,8 +671,6 @@ GROUP BY
     t.anio,
     t.cuatrimestre;
 GO
--------------------------------------------------------------------
-
 -------------------------------------------------------------------
 ----- EJECUCION DE LAS VISTAS -----
 -------------------------------------------------------------------
