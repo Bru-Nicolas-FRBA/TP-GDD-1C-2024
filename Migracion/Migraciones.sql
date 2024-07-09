@@ -1,682 +1,735 @@
-/*SI SALTA ERROR DE FOREIGN KEY CORRER DOS VECES EL CODIGO*/
-
-/*
-No identifica correctamente los hechos. Los hechos son: Ventas / Promociones / Pagos / Envios.
-Las tablas de hechos deben tener información agrupada y sumarizada por sus dimensiones y no contener información del modelo relacional en particular. Si la tabla del modelo relacional y la tabla de hechos tienen la misma cantidad de registros está mal. 
-En el hecho de ventas no pueden tener información del modelo relación de los tickets específicos.
-La dimensión Producto no es correcta, no pueden identificar un producto en particular.
-La dimensión promoción no es correcta porque debería ser un hecho
-No pueden tener la dimensión empleado y cliente, por algo se les pide la dimensión Rango Etario.
-*/
-
-USE [GD1C2024]
-GO
------ ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
------ CORRER ESTO INDIVIDUALMENTE ANTES DE CADA TEST COMPLETO ----- 
------ ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- 
------------------------------------------------------------- Tablas 
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Tiempo') begin DROP TABLE BI_REYES_DE_DATOS.BI_Tiempo; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Ubicacion') begin DROP TABLE BI_REYES_DE_DATOS.BI_Ubicacion; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Sucursal') begin DROP TABLE BI_REYES_DE_DATOS.BI_Sucursal; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_medio_de_pago') begin DROP TABLE BI_REYES_DE_DATOS.BI_medio_de_pago; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto_categoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto_categoria; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_Producto_subcategoria') begin DROP TABLE BI_REYES_DE_DATOS.BI_Producto_subcategoria; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_venta') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_venta; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_envio') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_envio; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_pago') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_pago; end
-if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'BI_REYES_DE_DATOS' AND TABLE_NAME = 'BI_hechos_promociones') begin DROP TABLE BI_REYES_DE_DATOS.BI_hechos_promociones; end
-GO
------------------------------------------------------------- Borramos todas las vistas
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual', 'V') IS NOT NULL  BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual; END 
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes', 'V') IS NOT NULL  BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago', 'V') IS NOT NULL BEGIN DROP VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago; END
-GO
------------------------------------------------------------- borramos todas las funciones
-IF OBJECT_ID('BI_REYES_DE_DATOS.turno', 'FN') IS NOT NULL BEGIN DROP FUNCTION BI_REYES_DE_DATOS.turno; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.rangoEtario ', 'FN') IS NOT NULL BEGIN DROP FUNCTION BI_REYES_DE_DATOS.rangoEtario ; END
-IF OBJECT_ID('BI_REYES_DE_DATOS.cuatrimestre', 'FN') IS NOT NULL BEGIN DROP FUNCTION BI_REYES_DE_DATOS.cuatrimestre; END
-GO
------------------------------------------------------------- esquema
-IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'BI_REYES_DE_DATOS')
-BEGIN EXEC ('CREATE SCHEMA BI_REYES_DE_DATOS') END
-GO
------ ----- ----- ----- ----- ----
------  CREACIÓN DE FUNCIONES -----
------ ----- ----- ----- ----- ----- 
------------------------------------------------------------- Turno
-CREATE FUNCTION BI_REYES_DE_DATOS.turno(@hora TIME)
-RETURNS VARCHAR(50)
-AS
-BEGIN
-    DECLARE @turno VARCHAR(50);
-    SELECT @turno = 
-        CASE 
-            WHEN @hora BETWEEN '08:00:00' AND '11:59:59' THEN 'Turno de 8 a 12'
-            WHEN @hora BETWEEN '12:00:00' AND '15:59:59' THEN 'Turno de 12 a 16'
-            WHEN @hora BETWEEN '16:00:00' AND '20:00:00' THEN 'Turno de 16 a 20'
-            ELSE 'Fuera de turno'
-        END;
-    RETURN @turno;
-END;
+	USE GD1C2024
 GO
 
------------------------------------------------------------- Rango Etario
-CREATE FUNCTION BI_REYES_DE_DATOS.rangoEtario(@fechaNacimiento AS DATE)
-RETURNS VARCHAR(30)
-AS
-BEGIN
-	DECLARE @edad INT
-	SET @edad = YEAR(GETDATE()) - YEAR(@fechaNacimiento) 
-	DECLARE @rangoEtario VARCHAR(30)
-	
-	IF(@edad < 25)
-		SET @rangoEtario = 'Menor a 25'
-	IF(@edad BETWEEN 25 AND 34)
-		SET @rangoEtario = '25 a 35'
-	IF(@edad BETWEEN 35 AND 50)
-		SET @rangoEtario = '35 a 50'
-	IF(@edad > 50)
-		SET @rangoEtario = 'Mas de 50'
+------------------------------------------------------------------------------------------------
+----- DROPEO DE TABLAS (respetar orden establecido) -----
+------------------------------------------------------------------------------------------------
 
-RETURN @rangoEtario
+if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Regla_x_Promocion') begin DROP TABLE REYES_DE_DATOS.Regla_x_Promocion; end
+if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Promocion_X_Producto') begin DROP TABLE REYES_DE_DATOS.Promocion_X_Producto; end
+if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Promocion_X_Item_Ticket')begin DROP TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Ticket_X_Pago') begin DROP TABLE REYES_DE_DATOS.Ticket_X_Pago; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Pago') begin DROP TABLE REYES_DE_DATOS.Pago; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Item_Ticket') begin DROP TABLE REYES_DE_DATOS.Item_Ticket; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Envio') begin DROP TABLE REYES_DE_DATOS.Envio; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Ticket') begin DROP TABLE REYES_DE_DATOS.Ticket; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto') begin DROP TABLE REYES_DE_DATOS.Producto; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Empleado') begin DROP TABLE REYES_DE_DATOS.Empleado; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Cliente') begin DROP TABLE REYES_DE_DATOS.Cliente; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Sucursal') begin DROP TABLE REYES_DE_DATOS.Sucursal; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Domicilio') begin DROP TABLE REYES_DE_DATOS.Domicilio; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Caja') begin DROP TABLE REYES_DE_DATOS.Caja; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Promocion') begin DROP TABLE REYES_DE_DATOS.Promocion; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Localidad') begin DROP TABLE REYES_DE_DATOS.Localidad; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Provincia') begin DROP TABLE REYES_DE_DATOS.Provincia; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Tipo_Comprobante') begin DROP TABLE REYES_DE_DATOS.Tipo_Comprobante; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Tipo_Caja') begin DROP TABLE REYES_DE_DATOS.Tipo_Caja; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Supermercado') begin DROP TABLE REYES_DE_DATOS.Supermercado; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Regla') begin DROP TABLE REYES_DE_DATOS.Regla; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Descuento') begin DROP TABLE REYES_DE_DATOS.Descuento; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Tipo_medio_de_pago') begin DROP TABLE REYES_DE_DATOS.Tipo_medio_de_pago; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_marca') begin DROP TABLE REYES_DE_DATOS.Producto_marca; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_subcategoria')begin DROP TABLE REYES_DE_DATOS.Producto_subcategoria; end
+if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_categoria') begin DROP TABLE REYES_DE_DATOS.Producto_categoria; end
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'REYES_DE_DATOS')
+BEGIN EXEC ('CREATE SCHEMA REYES_DE_DATOS')
 END
 GO
------------------------------------------------------------- Cuatrimestre
-CREATE FUNCTION BI_REYES_DE_DATOS.cuatrimestre(@mes INT)
-RETURNS INT
-AS
-BEGIN
-	DECLARE @cuatrimestre INT
+------------------------------------------------------------------------------------------------
+----- CREACIÓN DE TABLAS (respetar orden establecido) -----
+------------------------------------------------------------------------------------------------
 
-	IF(@mes BETWEEN 1 AND 4)
-	SET @cuatrimestre = 1
-	IF (@mes BETWEEN 5 AND 8)
-	SET @cuatrimestre = 2
-	IF (@mes BETWEEN 9 AND 12)
-	SET @cuatrimestre = 3
-
- RETURN @cuatrimestre
-	
-END
-GO
------ ----- ----- ----- ----- ----- ----- ----- 
------ CREACIÓN DE TABLAS-DIMENSIONES ----- 
------ ----- ----- ----- ----- ----- ----- -----
-------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Tiempo(
-	id_tiempo INT PRIMARY KEY IDENTITY(1,1),
-	anio INT NOT NULL, 
-	cuatrimestre INT NOT NULL,
-	mes INT NOT NULL
-);
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Ubicacion( -- == Domicilio
-	id_ubicacion INT PRIMARY KEY,
-	id_provincia INT NOT NULL,
-	id_localidad INT NOT NULL,
-	direccion varchar(70) not null
-); 
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_Sucursal(
-	id_sucursal INT PRIMARY KEY IDENTITY(1,1),
-	sucursal_domicilio VARCHAR(100) NOT NULL,
-  sucursal_numero VARCHAR(50) NOT NULL -- solo el numero
-);
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_medio_de_pago(
-    id_medio_de_pago INT PRIMARY KEY IDENTITY(1,1),
-	medio_de_pago_clasificacion VARCHAR(100) NOT NULL, -- credito / debito / efectivo / etc
-	medio_de_pago_detalle VARCHAR(100) NOT NULL,
-);
-
-CREATE TABLE BI_REYES_DE_DATOS.BI_Producto_categoria (
+CREATE TABLE REYES_DE_DATOS.Producto_categoria (
 	id_producto_categoria INT PRIMARY KEY IDENTITY(1,1),
 	producto_categoria_detalle VARCHAR(50) NOT NULL,
 );
 ---
-CREATE TABLE BI_REYES_DE_DATOS.BI_Producto_subcategoria (
+CREATE TABLE REYES_DE_DATOS.Producto_subcategoria (
 	id_producto_subcategoria INT PRIMARY KEY IDENTITY(1,1),
 	producto_subcategoria_detalle VARCHAR(50) NOT NULL,
 );
------ ----- ----- ----- ----- ----- ----- 
------ CREACIÓN DE TABLAS-HECHOS ----- 
------ ----- ----- ----- ----- ----- -----
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_envio (
+---
+CREATE TABLE REYES_DE_DATOS.Producto_marca (
+	id_producto_marca INT PRIMARY KEY IDENTITY(1,1),
+	producto_marca_detalle VARCHAR(30) NOT NULL,
+);
+---
+CREATE TABLE REYES_DE_DATOS.Tipo_medio_de_pago (
+	id_tipo_medio_pago INT PRIMARY KEY IDENTITY(1,1),
+	medio_de_pago_clasificacion VARCHAR(100) NOT NULL, -- credito / debito / efectivo / etc
+	medio_de_pago_detalle VARCHAR(100) NOT NULL, -- visa / mastercard / efectivo / etc
+);
+---
+CREATE TABLE REYES_DE_DATOS.Descuento (
+	descuento_codigo INT PRIMARY KEY NOT NULL,
+	descuento_descripcion VARCHAR(100) NOT NULL,
+	descuento_fecha_inicio DATE NOT NULL,
+	descuento_fecha_fin DATE NOT NULL,
+	descuento_valor_porcentual_a_aplicar DECIMAL(5, 2) NOT NULL,
+	descuento_tope DECIMAL(10, 2) NOT NULL,
+);
+---
+CREATE TABLE REYES_DE_DATOS.Regla(
+	id_regla INT PRIMARY KEY IDENTITY(1,1),
+	regla_cantidad_aplicable INT NOT NULL,
+	regla_descripcion VARCHAR(50) UNIQUE NOT NULL,
+	regla_cantidad_aplicable_descuento INT NOT NULL,
+	regla_cantidad_maxima INT NOT NULL,
+	regla_misma_marca BIT NOT NULL,
+	regla_mismo_producto BIT NOT NULL,
+	regla_descuento_aplicable_prod DECIMAL(3, 2) NOT NULL,
+);
+---
+CREATE TABLE REYES_DE_DATOS.Supermercado (
+	id_supermercado INT PRIMARY KEY IDENTITY(1,1),
+	super_nombre VARCHAR(50) UNIQUE NOT NULL,
+	super_razon_social VARCHAR(100) NOT NULL,
+	super_cuit VARCHAR(30) NOT NULL,
+	super_iibb VARCHAR(30) NOT NULL, --Ingr. Brut. N°: 133452135
+	super_fecha_inicio_actividad DATE NOT NULL,
+	super_condicion_fiscal VARCHAR(50) NOT NULL
+);
+---
+CREATE TABLE REYES_DE_DATOS.Tipo_Comprobante(
+	id_tipo_comprobante INT PRIMARY KEY IDENTITY(1,1),
+	tipo_comprobante_nombre VARCHAR (1) NOT NULL, --caracter
+);
+---
+CREATE TABLE REYES_DE_DATOS.Provincia(
+	id_provincia INT PRIMARY KEY IDENTITY(1,1),
+	provincia_nombre VARCHAR(50) UNIQUE NOT NULL,
+);
+---
+CREATE TABLE REYES_DE_DATOS.Localidad(
+	id_localidad INT PRIMARY KEY IDENTITY(1,1),
+	localidad_nombre VARCHAR(50) UNIQUE NOT NULL,
+);
+---
+CREATE TABLE REYES_DE_DATOS.Promocion(
+	id_promo INT PRIMARY KEY NOT NULL,
+	promo_descripcion VARCHAR(50) NOT NULL,
+	promo_fecha_inicio DATETIME NOT NULL,
+	promo_fecha_fin DATETIME NOT NULL,
+);
+---
+CREATE TABLE REYES_DE_DATOS.Caja(
+	id_caja INT PRIMARY KEY IDENTITY(1,1),
+	caja_numero INT NOT NULL,
+	caja_tipo VARCHAR(30) NOT NULL, 
+);
+------------------------------------------------------------------------------------------------
+----- Tablas con Clave foranea -----
+------------------------------------------------------------------------------------------------
+---
+CREATE TABLE REYES_DE_DATOS.Domicilio (
+    id_domicilio INT PRIMARY KEY IDENTITY(1,1),
+    id_localidad INT NOT NULL,
+    id_provincia INT NOT NULL,
+    domicilio_direccion VARCHAR(100) NOT NULL
+);
+---
+CREATE TABLE REYES_DE_DATOS.Sucursal (
+    id_sucursal INT PRIMARY KEY IDENTITY(1,1),
+    sucursal_id_supermercado INT NOT NULL,
+    sucursal_domicilio VARCHAR(100) NOT NULL,
+    sucursal_numero VARCHAR(50) NOT NULL -- solo el numero
+);
+
+---
+CREATE TABLE REYES_DE_DATOS.Cliente (
+    id_cliente INT PRIMARY KEY IDENTITY(1,1),
+    cliente_id_domicilio INT NOT NULL,
+    cliente_nombre VARCHAR(100) NOT NULL,
+    cliente_dni INT NOT NULL,
+    cliente_apellido VARCHAR(100) NOT NULL,
+    cliente_fecha_registro DATE NOT NULL,
+    cliente_mail VARCHAR(100) NOT NULL,
+    cliente_fecha_nacimiento DATE NOT NULL
+);
+
+
+---
+CREATE TABLE REYES_DE_DATOS.Empleado (
+    id_empleado INT PRIMARY KEY IDENTITY(1,1),
+    id_sucursal INT NOT NULL,
+    empleado_nombre VARCHAR(15) NOT NULL,
+    empleado_apellido VARCHAR(30) NOT NULL,
+    empleado_dni INT NOT NULL,
+    empleado_fecha_registro DATE,
+    empleado_fecha_nacimiento DATE,
+    empleado_email VARCHAR(30) NOT NULL,
+    empleado_telefono DECIMAL(8, 0) NOT NULL
+);
+---
+CREATE TABLE REYES_DE_DATOS.Producto (
+	id_producto INT PRIMARY KEY IDENTITY(1,1),
+    id_producto_categoria INT NOT NULL,
+    id_producto_subcategoria INT NOT NULL,
+    id_marca INT NOT NULL,
+	producto_codigo NVARCHAR(100) NOT NULL, -- PRODUCTO_NOMBRE
+    producto_descripcion NVARCHAR(100) NOT NULL,
+    producto_precio DECIMAL(10, 2) NOT NULL
+);
+---
+CREATE TABLE REYES_DE_DATOS.Ticket(
+    id_ticket INT PRIMARY KEY IDENTITY(1,1),
+	ticket_numero INT NOT NULL, -- TICKET_NUMERO
+    id_tipo_comprobante INT NOT NULL,
+    id_sucursal INT NOT NULL,
+    id_caja INT NOT NULL,
+    id_empleado INT NOT NULL,
+    ticket_fecha_hora DATETIME NOT NULL,
+    ticket_subtotal DECIMAL(10, 2) NOT NULL,
+    ticket_total DECIMAL(10, 2) NOT NULL,
+    ticket_total_descuento_aplicado INT NOT NULL,
+	ticket_total_descuento_aplicado_mp INT NOT NULL,
+    ticket_monto_total_envio INT NOT NULL
+);
+---
+CREATE TABLE REYES_DE_DATOS.Envio (
     id_envio INT PRIMARY KEY IDENTITY(1,1),
-  	id_tiempo int not null,
-	id_ubicacion int not null,
-	id_sucursal int not null,
-	id_turno varchar(50) not null,
-	id_rango_etario varchar(30) not null,
+    id_ticket INT NOT NULL,
+    id_cliente INT NOT NULL,
     envio_fecha_programada DATETIME NULL,
+    envio_horario_inicio INT NOT NULL,
+    envio_horario_fin INT NOT NULL,
     envio_fecha_entrega DATETIME NOT NULL,
+    envio_estado VARCHAR(50) NOT NULL,
     envio_costo DECIMAL(10, 2) NOT NULL,
 );
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta(
-  	id_venta INT PRIMARY KEY IDENTITY(1,1),
-  	id_tiempo INT NOT NULL,
-	id_ubicacion INT NOT NULL,
-	id_sucursal INT NOT NULL,
-	id_turno varchar(50) NOT NULL,
-	id_rango_etario varchar(30) NOT NULL,
-	id_categoria_prod INT NOT NULL,
-	id_subcategoria INT NOT NULL,
-	id_medio_de_pago INT NOT NULL,
-    venta_id_caja INT NOT NULL,
-    monto_ventas DECIMAL(10, 2) NOT NULL,
-	cantidad_ventas int not null,
-    monto_descuentos_aplicados DECIMAL(10, 2),
-	cantidad_descuentos int not null
+---
+CREATE TABLE REYES_DE_DATOS.Item_Ticket (
+    id_item_ticket INT PRIMARY KEY IDENTITY(1,1),
+    ticket_numero VARCHAR(50) NOT NULL,
+    id_producto INT NOT NULL,
+    id_tipo_comprobante INT NOT NULL,
+    id_sucursal INT NOT NULL,
+    id_promocion INT,
+    item_ticket_cantidad INT NOT NULL,
+    item_ticket_precio INT NOT NULL
 );
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_pago (
-  	id_pago INT PRIMARY KEY IDENTITY(1,1),
-  	id_tiempo INT NOT NULL,
-	--id_ubicacion INT NOT NULL,
-	id_sucursal INT NOT NULL,
-	id_turno varchar(50) NOT NULL,
-	--id_rango_etario varchar(30) NOT NULL,
-	id_medio_de_pago INT NOT NULL,
-  	monto_pagos INT NOT NULL,
-	cantidad_pagos INT NOT NULL,
-); 
------
-CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_promociones (
-  	id_promocion INT NOT NULL,
-	id_categoria_prod INT NOT NULL,
-	id_subcategoria INT NOT NULL,
-	cantidad_promociones INT NOT NULL,
+--
+CREATE TABLE REYES_DE_DATOS.Pago(
+	id_pago INT PRIMARY KEY IDENTITY(1,1), 
+	id_tipo_medio_de_pago INT NOT NULL,
+	id_descuento INT NOT NULL,
+	pago_fecha DATETIME NOT NULL,
+	pago_importe DECIMAL(15,2) NOT NULL,
+	pago_numero_tarjeta VARCHAR(20), -- SON OPCIONALES PORQUE PUEDE PAGAR EN EFECTIVO
+	medio_de_pago_cuotas INT,
+	medio_de_pago_fecha_vencimiento DATETIME,
+	medio_de_pago_descuento_aplicado DECIMAL(10, 2),
 );
+
+------------------------------------------------------------------------------------------------
+----- TABLAS COMPOSICION -----
+------------------------------------------------------------------------------------------------
+CREATE TABLE REYES_DE_DATOS.Regla_x_Promocion (
+	id_promocion INT NOT NULL,
+	id_regla INT NOT NULL,
+);
+--
+CREATE TABLE REYES_DE_DATOS.Ticket_X_Pago(
+	id_ticket INT NOT NULL,
+	id_pago INT NOT NULL,
+);
+--
+CREATE TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket (--
+	id_promocion INT NOT NULL,
+	id_item_ticket INT NOT NULL,
+);
+--
+CREATE TABLE REYES_DE_DATOS.Promocion_X_Producto (
+	id_promocion INT NOT NULL,
+	id_producto INT NOT NULL,
+);
+GO
 ------------------------------------------------------------------------------------------------
 ----- CONSTRAINTS CLAVES PRIMARIAS Y FORANEAS -----
 ------------------------------------------------------------------------------------------------
-ALTER TABLE BI_REYES_DE_DATOS.BI_hechos_venta ADD CONSTRAINT FK_id_sucursal_hechos_venta FOREIGN KEY (id_sucursal) REFERENCES BI_REYES_DE_DATOS.BI_Sucursal(id_sucursal)
+ALTER TABLE REYES_DE_DATOS.Promocion_X_Producto ADD CONSTRAINT FK_Promoxion_X_Producto_id_promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
+ALTER TABLE REYES_DE_DATOS.Promocion_X_Producto ADD CONSTRAINT FK_Promoxion_X_Producto_id_producto FOREIGN KEY (id_producto) REFERENCES REYES_DE_DATOS.Producto(id_producto)
+ALTER TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket ADD CONSTRAINT FK_Promocion_X_ItemTicket_Promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
+ALTER TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket ADD CONSTRAINT FK_Promocion_X_ItemTicket_Item_Ticket FOREIGN KEY (id_item_ticket) REFERENCES REYES_DE_DATOS.Item_Ticket(id_item_ticket)
+ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT FK_Ticket_X_Pago_id_ticket FOREIGN KEY (id_ticket) REFERENCES REYES_DE_DATOS.Ticket (id_ticket)
+ALTER TABLE REYES_DE_DATOS.Ticket_X_Pago ADD CONSTRAINT FK_Ticket_X_Pago_id_pago FOREIGN KEY (id_pago) REFERENCES REYES_DE_DATOS.Pago (id_pago)
+ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT FK_Regla_X_Promocion_Promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
+ALTER TABLE REYES_DE_DATOS.Regla_x_Promocion ADD CONSTRAINT FK_Regla_X_Promocion_Regla FOREIGN KEY (id_regla) REFERENCES REYES_DE_DATOS.Regla(id_regla)
+ALTER TABLE REYES_DE_DATOS.Pago ADD CONSTRAINT FK_id_descuento FOREIGN KEY (id_descuento) REFERENCES REYES_DE_DATOS.Descuento(descuento_codigo)
+ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_producto FOREIGN KEY (id_producto) REFERENCES REYES_DE_DATOS.Producto(id_producto)
+ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_tipo_comprobante FOREIGN KEY (id_tipo_comprobante) REFERENCES REYES_DE_DATOS.Tipo_Comprobante(id_tipo_comprobante)
+ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_sucursal FOREIGN KEY (id_sucursal) REFERENCES REYES_DE_DATOS.Sucursal(id_sucursal)
+ALTER TABLE REYES_DE_DATOS.Item_Ticket ADD CONSTRAINT FK_id_promocion FOREIGN KEY (id_promocion) REFERENCES REYES_DE_DATOS.Promocion(id_promo)
+ALTER TABLE REYES_DE_DATOS.Envio ADD CONSTRAINT FK_id_cliente_envio FOREIGN KEY (id_cliente) REFERENCES REYES_DE_DATOS.Cliente(id_cliente)
+ALTER TABLE REYES_DE_DATOS.Ticket ADD CONSTRAINT FK_id_tipo_comprobante_ticket FOREIGN KEY (id_tipo_comprobante) REFERENCES REYES_DE_DATOS.Tipo_Comprobante(id_tipo_comprobante)
+ALTER TABLE REYES_DE_DATOS.Ticket ADD CONSTRAINT FK_id_sucursal_ticket FOREIGN KEY (id_sucursal) REFERENCES REYES_DE_DATOS.Sucursal(id_sucursal)
+ALTER TABLE REYES_DE_DATOS.Ticket ADD CONSTRAINT FK_id_caja_ticket FOREIGN KEY (id_caja) REFERENCES REYES_DE_DATOS.Caja(id_caja)
+ALTER TABLE REYES_DE_DATOS.Ticket ADD CONSTRAINT FK_id_empleado_ticket FOREIGN KEY (id_empleado) REFERENCES REYES_DE_DATOS.Empleado(id_empleado)
+ALTER TABLE REYES_DE_DATOS.Producto ADD CONSTRAINT FK_id_producto_categoria FOREIGN KEY (id_producto_categoria) REFERENCES REYES_DE_DATOS.Producto_categoria(id_producto_categoria)
+ALTER TABLE REYES_DE_DATOS.Producto ADD CONSTRAINT FK_id_producto_subcategoria FOREIGN KEY (id_producto_subcategoria) REFERENCES REYES_DE_DATOS.Producto_subcategoria(id_producto_subcategoria)
+ALTER TABLE REYES_DE_DATOS.Producto ADD CONSTRAINT FK_id_marca FOREIGN KEY (id_marca) REFERENCES REYES_DE_DATOS.Producto_marca(id_producto_marca)
+ALTER TABLE REYES_DE_DATOS.Empleado ADD CONSTRAINT FK_id_sucursal_empleado FOREIGN KEY (id_sucursal) REFERENCES REYES_DE_DATOS.Sucursal(id_sucursal)
+ALTER TABLE REYES_DE_DATOS.Empleado ADD CONSTRAINT UQ_empleado_email_empleado UNIQUE (empleado_email)
+ALTER TABLE REYES_DE_DATOS.Empleado ADD CONSTRAINT UQ_empleado_telefono_empleado UNIQUE (empleado_telefono)
+ALTER TABLE REYES_DE_DATOS.Cliente ADD CONSTRAINT FK_cliente_id_domicilio FOREIGN KEY (cliente_id_domicilio) REFERENCES REYES_DE_DATOS.Domicilio(id_domicilio)
+ALTER TABLE REYES_DE_DATOS.Domicilio ADD CONSTRAINT FK_id_localidad FOREIGN KEY (id_localidad) REFERENCES REYES_DE_DATOS.Localidad(id_localidad)
+ALTER TABLE REYES_DE_DATOS.Domicilio ADD CONSTRAINT FK_id_provincia FOREIGN KEY (id_provincia) REFERENCES REYES_DE_DATOS.Provincia(id_provincia)
 GO
------ ----- ----- ----- ----- ----- ----- ----- 
------  CREACIÓN DE MIGRACIONES-DIMENSIONES -----
------ ----- ----- ----- ----- ----- ----- ----- 
------------------------------------------------------------- Tiempo
-INSERT INTO BI_REYES_DE_DATOS.BI_Tiempo(
-	anio,
-	cuatrimestre,
-	mes
-)	
-SELECT DISTINCT 
-	YEAR(pago_fecha),
-	BI_REYES_DE_DATOS.cuatrimestre(MONTH(pago_fecha)),
-	MONTH(pago_fecha)
-FROM REYES_DE_DATOS.Pago
-INSERT INTO BI_REYES_DE_DATOS.BI_Tiempo(
-	anio,
-	cuatrimestre,
-	mes
-)	
-SELECT DISTINCT 
-	YEAR(envio_fecha_entrega),
-	BI_REYES_DE_DATOS.cuatrimestre(MONTH(envio_fecha_entrega)),
-	MONTH(envio_fecha_entrega)
-FROM REYES_DE_DATOS.Envio
-PRINT 'Migración de BI_Tiempo terminada';
-GO
-------------------------------------------------------------  Sucursal
-INSERT INTO BI_REYES_DE_DATOS.BI_Sucursal(
-	sucursal_domicilio,
-    sucursal_numero -- solo el numero
+------------------------------------------------------------------------------------------------
+----- MIGRACION (respetar orden establecido) -----
+------------------------------------------------------------------------------------------------
+INSERT INTO REYES_DE_DATOS.Producto_categoria(producto_categoria_detalle)
+	SELECT DISTINCT PRODUCTO_CATEGORIA
+	FROM gd_esquema.Maestra
+	WHERE PRODUCTO_CATEGORIA IS NOT NULL	
+PRINT 'Migración de categoria terminada';
+
+INSERT INTO REYES_DE_DATOS.Producto_subcategoria(producto_subcategoria_detalle)
+	SELECT DISTINCT m.PRODUCTO_SUB_CATEGORIA
+	FROM gd_esquema.Maestra m
+	WHERE m.PRODUCTO_SUB_CATEGORIA IS NOT NULL		
+PRINT 'Migración de subcategoria terminada';
+
+INSERT INTO REYES_DE_DATOS.Producto_marca(producto_marca_detalle)
+	SELECT DISTINCT m.PRODUCTO_MARCA
+	FROM gd_esquema.Maestra m
+	WHERE m.PRODUCTO_MARCA IS NOT NULL
+PRINT 'Migración de marca terminada';
+
+INSERT INTO REYES_DE_DATOS.Tipo_medio_de_pago(medio_de_pago_clasificacion, medio_de_pago_detalle)
+	SELECT DISTINCT m.PAGO_TIPO_MEDIO_PAGO, m.PAGO_MEDIO_PAGO
+	FROM gd_esquema.Maestra m
+	WHERE m.PAGO_TIPO_MEDIO_PAGO IS NOT NULL
+		AND m.PAGO_MEDIO_PAGO IS NOT NULL
+PRINT 'Migración de medio de pago terminada';
+
+INSERT INTO REYES_DE_DATOS.Descuento(
+	descuento_codigo,
+	descuento_descripcion,
+	descuento_fecha_inicio,
+	descuento_fecha_fin,
+	descuento_valor_porcentual_a_aplicar,
+	descuento_tope
+	)
+SELECT DISTINCT m.DESCUENTO_CODIGO,
+	m.DESCUENTO_DESCRIPCION,
+	m.DESCUENTO_FECHA_INICIO,
+	m.DESCUENTO_FECHA_FIN,
+	m.DESCUENTO_PORCENTAJE_DESC,
+	m.DESCUENTO_TOPE
+FROM gd_esquema.Maestra m
+WHERE m.DESCUENTO_CODIGO IS NOT NULL
+PRINT 'Migración de descuento terminada';
+
+INSERT INTO REYES_DE_DATOS.Regla(
+	regla_descripcion,
+	regla_cantidad_aplicable,
+	regla_cantidad_aplicable_descuento,
+	regla_cantidad_maxima,
+	regla_misma_marca,
+	regla_mismo_producto,
+	regla_descuento_aplicable_prod
 )
-SELECT
-	sucursal_domicilio,
-    sucursal_numero
-FROM REYES_DE_DATOS.Sucursal
-PRINT 'Migración de BI_Sucursal terminada'
-GO
------------------------------------------------------------- Ubicacion
-INSERT INTO BI_REYES_DE_DATOS.BI_Ubicacion(
-	id_ubicacion,
-	id_provincia,
+SELECT DISTINCT       
+	m.REGLA_DESCRIPCION,
+	m.REGLA_CANT_APLICABLE_REGLA,
+	m.REGLA_CANT_APLICA_DESCUENTO,
+	m.REGLA_CANT_MAX_PROD,
+	m.REGLA_APLICA_MISMA_MARCA,
+	m.REGLA_APLICA_MISMO_PROD,
+	m.REGLA_DESCUENTO_APLICABLE_PROD
+FROM gd_esquema.Maestra m
+WHERE m.REGLA_DESCRIPCION IS NOT NULL
+PRINT 'Migración de regla terminada';
+
+INSERT INTO REYES_DE_DATOS.Supermercado(
+	super_nombre,
+	super_razon_social,
+	super_cuit,
+	super_iibb, 
+	super_fecha_inicio_actividad,
+	super_condicion_fiscal
+)
+SELECT DISTINCT m.SUPER_NOMBRE,
+	m.SUPER_RAZON_SOC,
+	m.SUPER_CUIT,
+	m.SUPER_IIBB,
+	m.SUPER_FECHA_INI_ACTIVIDAD,
+	m.SUPER_CONDICION_FISCAL
+FROM gd_esquema.Maestra m
+WHERE m.SUPER_CUIT IS NOT NULL
+PRINT 'Migración de supermercado terminada';
+
+INSERT INTO REYES_DE_DATOS.Tipo_Comprobante(tipo_comprobante_nombre)
+	SELECT DISTINCT TICKET_TIPO_COMPROBANTE
+	FROM gd_esquema.Maestra
+	WHERE TICKET_TIPO_COMPROBANTE IS NOT NULL
+PRINT 'Migración de tipo de comprobante terminada';
+
+INSERT INTO REYES_DE_DATOS.Provincia(provincia_nombre)
+	SELECT DISTINCT CLIENTE_PROVINCIA
+	FROM gd_esquema.Maestra 
+	WHERE CLIENTE_PROVINCIA IS NOT NULL
+	UNION SELECT SUCURSAL_PROVINCIA AS provincia
+		FROM gd_esquema.Maestra
+		WHERE SUCURSAL_PROVINCIA IS NOT NULL
+	UNION SELECT SUPER_PROVINCIA AS provincia
+		FROM gd_esquema.Maestra
+		WHERE SUPER_PROVINCIA IS NOT NULL;
+PRINT 'Migración de Provincia terminada';
+
+INSERT INTO REYES_DE_DATOS.Localidad(localidad_nombre)
+	SELECT DISTINCT CLIENTE_LOCALIDAD
+	FROM gd_esquema.Maestra 
+	WHERE CLIENTE_LOCALIDAD IS NOT NULL
+	UNION SELECT SUCURSAL_LOCALIDAD
+		FROM gd_esquema.Maestra
+		WHERE SUCURSAL_LOCALIDAD IS NOT NULL
+	UNION SELECT SUPER_LOCALIDAD
+		FROM gd_esquema.Maestra
+		WHERE SUPER_LOCALIDAD IS NOT NULL;
+PRINT 'Migración de Localidad terminada';
+
+INSERT INTO REYES_DE_DATOS.Promocion(
+		id_promo,
+		promo_descripcion,
+		promo_fecha_inicio,
+		promo_fecha_fin	
+	)
+	SELECT DISTINCT
+		PROMO_CODIGO,
+		PROMOCION_DESCRIPCION,
+		PROMOCION_FECHA_INICIO,
+		PROMOCION_FECHA_FIN
+	FROM gd_esquema.Maestra
+	WHERE PROMO_CODIGO IS NOT NULL
+PRINT 'Migración de promocion terminada';
+
+INSERT INTO REYES_DE_DATOS.Caja(
+	caja_numero,
+	caja_tipo
+	)
+	SELECT DISTINCT
+	m.CAJA_NUMERO, 
+	m.CAJA_TIPO
+	FROM gd_esquema.Maestra m
+	WHERE CAJA_NUMERO IS NOT NULL
+PRINT 'Migración de caja terminada';
+
+INSERT INTO REYES_DE_DATOS.Domicilio (
+	domicilio_direccion,
 	id_localidad,
-	direccion
-)
-SELECT
-	d.id_domicilio,
-	d.id_provincia,
-	d.id_localidad,
-	d.domicilio_direccion
-FROM REYES_DE_DATOS.Domicilio d
-PRINT 'Migración de BI_ubicación terminada'
-GO
------------------------------------------------------------- Medio De Pago
-INSERT INTO BI_REYES_DE_DATOS.BI_medio_de_pago(
-    medio_de_pago_clasificacion, -- credito / debito / efectivo / etc
-	medio_de_pago_detalle
-)
-SELECT
-	medio_de_pago_clasificacion, -- credito / debito / efectivo / etc
-	medio_de_pago_detalle
-FROM REYES_DE_DATOS.Tipo_medio_de_pago
-PRINT 'Migración de BI_medio_de_pago terminada'
-GO
------------------------------------------------------------- Categoria Producto 
-INSERT INTO BI_REYES_DE_DATOS.BI_Producto_categoria(
-	producto_categoria_detalle
-)
-SELECT
-	producto_categoria_detalle
-FROM REYES_DE_DATOS.Producto_categoria
-PRINT 'Migración de BI_categoria_producto terminada'
-GO
------------------------------------------------------------- Subcategoria Producto
-INSERT INTO BI_REYES_DE_DATOS.BI_Producto_subcategoria(
-	producto_subcategoria_detalle
-)
-SELECT
-	producto_subcategoria_detalle
-FROM REYES_DE_DATOS.Producto_subcategoria
-PRINT 'Migración de BI_categoria_subproducto terminada'
-GO
------ ----- ----- ----- ----- ----- ----- ----- 
------  CREACIÓN DE MIGRACIONES-HECHOS -----
------ ----- ----- ----- ----- ----- ----- -----
------------------------------------------------------------- Envio
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_envio (
-  	id_tiempo,
-	id_ubicacion,
-	id_sucursal,
-	id_rango_etario,
-	id_turno,
-    envio_fecha_programada,
-    envio_fecha_entrega,
-    envio_costo
-)
-SELECT
-	t.id_tiempo,
-	u.id_ubicacion,
-	s.id_sucursal,
-	BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
-	BI_REYES_DE_DATOS.turno(CAST(e.envio_fecha_entrega AS TIME)),
-	e.envio_fecha_programada,
-	e.envio_fecha_entrega,
-	sum(e.envio_costo)
-FROM REYES_DE_DATOS.Envio e
-	join BI_REYES_DE_DATOS.BI_Tiempo t on 
-		year(e.envio_fecha_entrega) = t.anio
-		and month(e.envio_fecha_entrega) = t.mes
-		and BI_REYES_DE_DATOS.cuatrimestre(month(e.envio_fecha_entrega)) = t.cuatrimestre
-	join REYES_DE_DATOS.Cliente c on c.id_cliente = e.id_cliente
-	join BI_REYES_DE_DATOS.BI_Ubicacion u on c.cliente_id_domicilio = u.id_ubicacion
-	join BI_REYES_DE_DATOS.BI_Sucursal s on s.sucursal_domicilio = u.direccion
-group by t.id_tiempo,
-	t.id_tiempo,
-	u.id_ubicacion,
-	s.id_sucursal,
-	BI_REYES_DE_DATOS.rangoEtario(c.cliente_fecha_nacimiento),
-	BI_REYES_DE_DATOS.turno(CAST(e.envio_fecha_entrega AS TIME)),
-	e.envio_fecha_programada,
-	e.envio_fecha_entrega
-PRINT 'Migración de BI_hechos_envio terminada'
-GO
------------------------------------------------------------- Venta
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta(
-	id_tiempo,
-	id_ubicacion,
-	id_sucursal,
-	id_turno,
-	id_rango_etario,
-	id_categoria_prod,
-	id_subcategoria,
-	id_medio_de_pago,
-    venta_id_caja,
-    monto_ventas,
-	cantidad_ventas,
-    monto_descuentos_aplicados,
-	cantidad_descuentos
-)
-SELECT
-	tp.id_tiempo,
-	u.id_ubicacion,
-	s.id_sucursal,
-	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
-	BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
-	p.id_producto_categoria,
-	p.id_producto_subcategoria,
-	mp.id_tipo_medio_pago,
-	t.id_caja,
-	sum(t.ticket_total),
-	count(t.ticket_total),
-	sum(t.ticket_total_descuento_aplicado),
-	count(t.ticket_total_descuento_aplicado)
-FROM REYES_DE_DATOS.Ticket t
-	JOIN BI_REYES_DE_DATOS.BI_Tiempo tp on
-		year(t.ticket_fecha_hora) = tp.anio
-		and month(t.ticket_fecha_hora) = tp.mes
-		and BI_REYES_DE_DATOS.cuatrimestre(month(t.ticket_fecha_hora)) = tp.cuatrimestre
-	JOIN BI_REYES_DE_DATOS.BI_Sucursal s on s.id_sucursal = t.id_sucursal
-	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u on u.direccion = s.sucursal_domicilio
-	JOIN REYES_DE_DATOS.Empleado e on t.id_empleado = e.id_empleado
-	JOIN REYES_DE_DATOS.Item_Ticket i on i.ticket_numero+i.id_sucursal+i.id_tipo_comprobante = t.ticket_numero+t.id_sucursal+t.id_tipo_comprobante
-	JOIN REYES_DE_DATOS.Producto p on i.id_producto = p.id_producto
-	JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
-	JOIN REYES_DE_DATOS.Pago pg on x.id_pago = pg.id_pago
-	JOIN REYES_DE_DATOS.Tipo_medio_de_pago mp on pg.id_tipo_medio_de_pago = mp.id_tipo_medio_pago
-GROUP BY tp.id_tiempo,
-	tp.id_tiempo,
-	u.id_ubicacion,
-	s.id_sucursal,
-	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
-	BI_REYES_DE_DATOS.rangoEtario(e.empleado_fecha_nacimiento),
-	p.id_producto_categoria,
-	p.id_producto_subcategoria,
-	mp.id_tipo_medio_pago,
-	t.id_caja
-PRINT 'Migración de BI_hechos_venta terminada'
-GO
------------------------------------------------------------- Pago
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_pago(
-	id_tiempo,
-	id_sucursal,
-	id_turno,
-	id_medio_de_pago,
-  	monto_pagos,
-	cantidad_pagos
-	--id_ubicacion,
-	--id_rango_etario
-)
-SELECT
-	t.id_tiempo,
-	tk.id_sucursal,
-	BI_REYES_DE_DATOS.turno(CAST(p.pago_fecha AS TIME)),
-	p.id_tipo_medio_de_pago,
-	sum(p.pago_importe),
-	count(p.pago_importe)
-FROM REYES_DE_DATOS.Pago p
-	JOIN BI_REYES_DE_DATOS.BI_Tiempo t on
-		year(p.pago_fecha) = t.anio
-		and month(p.pago_fecha) = t.mes
-		and BI_REYES_DE_DATOS.cuatrimestre(month(p.pago_fecha)) = t.cuatrimestre
-	JOIN REYES_DE_DATOS.Ticket_X_Pago x on p.id_pago = x.id_pago
-	JOIN REYES_DE_DATOS.Ticket tk on x.id_ticket = tk.id_ticket
-WHERE p.pago_fecha is not null
-GROUP BY 
-	t.id_tiempo,
-	tk.id_sucursal,
-	BI_REYES_DE_DATOS.turno(CAST(p.pago_fecha AS TIME)),
-	p.id_tipo_medio_de_pago
-PRINT 'Migración de BI_Pago terminada'
-GO
------------------------------------------------------------- Promocion
-INSERT INTO BI_REYES_DE_DATOS.BI_hechos_promociones(
-  	id_promocion,
-	id_categoria_prod,
-	id_subcategoria,
-	cantidad_promociones
+	id_provincia
+	) 
+	SELECT DISTINCT
+		m.SUPER_DOMICILIO,
+		l.id_localidad,
+		p.id_provincia
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.SUPER_LOCALIDAD
+		JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.SUPER_PROVINCIA
+	WHERE SUPER_DOMICILIO IS NOT NULL;
+PRINT 'Migracion de Domicilio de supermercado terminada';
+
+INSERT INTO REYES_DE_DATOS.Domicilio (
+	domicilio_direccion,
+	id_localidad,
+	id_provincia
 )
 SELECT DISTINCT
-	p.id_promo,
-	pr.id_producto_categoria,
-	pr.id_producto_subcategoria,
-	count(*)
-FROM REYES_DE_DATOS.Promocion p
-	join REYES_DE_DATOS.Item_Ticket it on it.id_promocion = p.id_promo
-	join REYES_DE_DATOS.Producto pr on pr.id_producto = it.id_producto
-GROUP BY
-	p.id_promo,
-	pr.id_producto_categoria,
-	pr.id_producto_subcategoria
-PRINT 'Migración de BI_Promo terminada'
-GO
------ ----- ----- ----- ----- ----- ----- 
------ CREACION DE MIGRACIONES EXTRAS ----- 
------ ----- ----- ----- ----- ----- -----
+	m.CLIENTE_DOMICILIO,
+	l.id_localidad,
+	p.id_provincia
+FROM gd_esquema.Maestra m
+	JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.CLIENTE_LOCALIDAD
+	JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.CLIENTE_PROVINCIA
+WHERE CLIENTE_DOMICILIO IS NOT NULL;
 
------ ----- ----- ----- ----- 
------ CREACION DE VIEWS ----- 
------ ----- ----- ----- -----
------
------
--- 1) Vista para calcular el ticket promedio mensual por localidad, año y mes
------
-CREATE VIEW BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual AS
-SELECT
-    AVG(v.monto_ventas) AS PromedioMensual,
-    l.localidad_nombre,
-    t.anio AS Año,
-    t.mes AS Mes
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-	JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON v.id_tiempo = t.id_tiempo
-	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u ON v.id_ubicacion = u.id_ubicacion
-	join REYES_DE_DATOS.Localidad l on u.id_localidad = l.id_localidad
-GROUP BY
-    t.mes,
-    t.anio,
-    l.localidad_nombre;
-GO
------ 
--- 2) Vista para calcular la cantidad de unidades promedio por turno para cada cuatrimestre de cada año
------ 
-CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio AS
-SELECT
-	avg(v.cantidad_ventas) as Promedio,
-	v.id_turno as Turno,
-    t.cuatrimestre as Cuatrimestre,
-    t.anio as Año
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-	JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON v.id_tiempo = t.id_tiempo
-GROUP BY
-	v.id_turno,
-    t.cuatrimestre,
-    t.anio;
-GO
------ 
--- 3) Vista para calcular porcentaje anual de ventas registradas por rango etario del empleado según el tipo de caja para cada cuatrimestre.
------ 
-CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre AS
-SELECT
-    v.id_rango_etario as RangoEtario,
-    c.caja_tipo as TipoCaja,
-    t.cuatrimestre as Cuatrimestre,
-    (
-        SUM(v.monto_ventas) * 100
-        /
-        (
-            SELECT SUM(v2.monto_ventas)
-                FROM BI_REYES_DE_DATOS.BI_hechos_venta v2
-                    JOIN BI_REYES_DE_DATOS.BI_Tiempo t2 ON v2.id_tiempo = t2.id_tiempo
-                WHERE t2.anio = t.anio
-        )
-    ) as Porcentaje
-FROM 
-    BI_REYES_DE_DATOS.BI_hechos_venta v
-    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON v.id_tiempo = t.id_tiempo
-    JOIN REYES_DE_DATOS.Caja c ON c.id_caja = v.venta_id_caja
-GROUP BY
-	v.id_rango_etario,
-    c.caja_tipo,
-    t.cuatrimestre,
-	t.anio;
-GO
------ revisar
--- 4) Vista para calcular cantidad de ventas registradas por turno para cada localidad según el mes de cada año
------
-CREATE VIEW BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad AS
-SELECT
-	v.id_turno as Turno,
-    l.localidad_nombre as Localidad,
-    t.mes as Mes,
-    t.anio as Año,
-    sum(v.cantidad_ventas) as CantidadVentas
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
-    JOIN BI_REYES_DE_DATOS.BI_Sucursal s ON v.id_sucursal= s.id_sucursal
-    JOIN BI_REYES_DE_DATOS.BI_Ubicacion u ON v.id_ubicacion = u.id_ubicacion
-	join REYES_DE_DATOS.Localidad l on u.id_localidad = l.id_localidad
-GROUP BY
-	v.id_turno,
-    l.localidad_nombre,
-    t.mes,
-    t.anio;
-GO
------ revisar
--- 5) Vista para calcular el porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año
------ 
-CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes AS
-SELECT
-	(sum(v.cantidad_descuentos) * 100) / (sum(v.cantidad_ventas)) as Porcentaje,
-	t.mes as Mes,
-	t.anio as Año
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-	join BI_REYES_DE_DATOS.BI_Tiempo t on v.id_tiempo = t.id_tiempo
-GROUP BY
-	t.anio,
-	t.mes;
-GO
------ 
--- 6) Vista para calcular las tres categorías de productos con mayor descuento aplicado a partir de promociones para cada cuatrimestre de cada año.
------
-CREATE VIEW BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento AS
-SELECT top 3
-    pc.producto_categoria_detalle as Categoria,
-	sum(v.monto_descuentos_aplicados) as SumatoriaDescuentosAplicados,
-	t.anio as Anio,
-    t.cuatrimestre as Cuatrimestre
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-	join BI_REYES_DE_DATOS.BI_Tiempo t on v.id_tiempo = t.id_tiempo
-	join BI_REYES_DE_DATOS.BI_Producto_categoria pc on v.id_categoria_prod = pc.id_producto_categoria
-GROUP BY
-    t.anio,
-	t.cuatrimestre,
-	pc.producto_categoria_detalle;
-GO
------ revisar
--- 7) Vista para calcular porcentaje de cumplimiento de envíos en los tiempos programados por sucursal por año/mes (desvío)
------
-CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios AS
-SELECT
-    s.id_sucursal AS Sucursal,
-	(COUNT(CASE WHEN e.envio_fecha_entrega <= e.envio_fecha_programada THEN 1 ELSE NULL END) * 100.0) / COUNT(e.id_envio) AS PorcentajeDeCumplimiento,
-    t.anio AS Año,
-    t.mes AS Mes
-FROM BI_REYES_DE_DATOS.BI_hechos_envio e
-    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON e.id_tiempo = t.id_tiempo
-    JOIN BI_REYES_DE_DATOS.BI_Sucursal s ON e.id_sucursal = s.id_sucursal
-where e.envio_fecha_entrega is not null and e.envio_fecha_programada is not null
-GROUP BY
-    s.id_sucursal,
-    t.anio,
-    t.mes;
-GO
------ revisar 
--- 8) Vista para calcular la cantidad de envíos por rango etario de clientes para cada cuatrimestre de cada año.
------ 
-CREATE VIEW BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario AS
-SELECT
-    count(*) as CantidadEnvios,
-	e.id_rango_etario as RangoEtarioCliente,
-    t.cuatrimestre as Cuatrimeste,
-    t.anio as Año
-FROM BI_REYES_DE_DATOS.BI_hechos_envio e
-    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON e.id_tiempo = t.id_tiempo 
-GROUP BY
-    e.id_rango_etario,
-	t.cuatrimestre,
-    t.anio;
-GO
------ revisar
--- 9) Vista para calcular las 5 localidades (tomando la localidad del cliente) con mayor costo de envío.
------ 
-CREATE VIEW BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio AS
-SELECT TOP 5
-    l.localidad_nombre as Localidad,
-    sum(e.envio_costo) as CostoEnvio
-FROM BI_REYES_DE_DATOS.BI_hechos_envio e
-	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u on e.id_ubicacion = u.id_ubicacion
-	JOIN REYES_DE_DATOS.Localidad l on u.id_localidad = l.id_localidad
-	INNER JOIN REYES_DE_DATOS.Cliente c on u.id_ubicacion = c.cliente_id_domicilio
-GROUP BY
-    l.localidad_nombre;
-GO
------ revisar
--- 10) Vista para calcular las 3 sucursales con el mayor importe de pagos en cuotas, según el medio de pago, mes y año.
------
-CREATE VIEW BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas AS
-SELECT top 3
-    p.id_sucursal as Sucursal,
-    sum(p.monto_pagos) as MayorImporteCuotas,
-    mp.medio_de_pago_detalle as MedioDePago,
-	t.mes as Mes,
-    t.anio as Anio
-FROM BI_REYES_DE_DATOS.BI_hechos_pago p
-	JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON p.id_tiempo = t.id_tiempo	
-    join BI_REYES_DE_DATOS.BI_medio_de_pago mp on p.id_medio_de_pago = mp.id_medio_de_pago
-where mp.medio_de_pago_detalle != 'Efectivo'
-GROUP BY
-    p.id_sucursal,
-    mp.medio_de_pago_detalle,
-	t.anio,
-	t.mes;
-GO
------ 
--- 11) Vista para calcular el promedio de importe de la cuota en función del rango etareo del cliente.
------ 
-CREATE VIEW BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario AS
-SELECT
-    v.id_rango_etario AS RangoEtario,
-    AVG(v.monto_ventas) AS PromedioImporteCuota
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-GROUP BY
-   v.id_rango_etario;
-GO
------ revisar
--- 12) Vista para calcular el porcentaje de descuento aplicado por cada medio de pago en función del valor de total de pagos sin el descuento, por cuatrimestre.
------ 
-CREATE VIEW BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago AS
-SELECT
-    mp.medio_de_pago_detalle as MedioPago,
-    t.anio as Año,
-    t.cuatrimestre as Cuatrimestre,
-    (sum(v.cantidad_descuentos) * 100) / sum(v.cantidad_ventas) as Porcentaje
-FROM BI_REYES_DE_DATOS.BI_hechos_venta v
-    JOIN BI_REYES_DE_DATOS.BI_Tiempo t ON t.id_tiempo = t.id_tiempo
-	JOIN BI_REYES_DE_DATOS.BI_medio_de_pago mp on v.id_medio_de_pago = mp.id_medio_de_pago
-GROUP BY
-    mp.medio_de_pago_detalle,
-    t.anio,
-    t.cuatrimestre;
-GO
--------------------------------------------------------------------
+INSERT INTO REYES_DE_DATOS.Domicilio (
+	domicilio_direccion,
+	id_localidad,
+	id_provincia
+)
+SELECT DISTINCT
+	m.SUCURSAL_DIRECCION,
+	l.id_localidad,
+	p.id_provincia
+FROM gd_esquema.Maestra m
+	JOIN REYES_DE_DATOS.Localidad l ON l.localidad_nombre = m.SUCURSAL_LOCALIDAD
+	JOIN REYES_DE_DATOS.Provincia p ON p.provincia_nombre = m.SUCURSAL_PROVINCIA
+WHERE SUCURSAL_DIRECCION IS NOT NULL;
+PRINT 'Migracion de Domicilio de cliente terminada';
 
--------------------------------------------------------------------
------ EJECUCION DE LAS VISTAS -----
--------------------------------------------------------------------
---1
-select * from BI_REYES_DE_DATOS.BI_Vista_Ticket_Promedio_Mensual
---2
-select * from BI_REYES_DE_DATOS.Vista_Cantidad_Unidades_Promedio
---3
-select * from BI_REYES_DE_DATOS.BI_Porcentaje_Ventas_Por_Cuatrimestre
---4
-select * from BI_REYES_DE_DATOS.Vista_Cantidad_Ventas_Por_Turno_Y_Localidad
---5
-select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Por_Mes
---6
-select * from BI_REYES_DE_DATOS.Vista_Categorias_Productos_Con_Mayor_Descuento 
---7
-select * from BI_REYES_DE_DATOS.BI_Porcentaje_Cumplimiento_Envios
---8
-select * from BI_REYES_DE_DATOS.BI_Cantidad_Envios_Rango_Etario
---9
-select * from BI_REYES_DE_DATOS.BI_Top_5_Localidades_Costo_Envio
---10
-select * from BI_REYES_DE_DATOS.BI_Top3_Sucursales_Pagos_Cuotas
---11
-select * from BI_REYES_DE_DATOS.BI_Promedio_Importe_Cuota_RangoEtario
---12
-select * from BI_REYES_DE_DATOS.BI_Porcentaje_Descuento_Medio_Pago
+INSERT INTO REYES_DE_DATOS.Sucursal (
+	sucursal_domicilio,
+	sucursal_id_supermercado,
+	sucursal_numero -- solo el numero
+)
+SELECT DISTINCT
+	m.SUCURSAL_DIRECCION,
+	s.id_supermercado,
+	m.SUCURSAL_NOMBRE	
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Supermercado s ON m.SUPER_NOMBRE = s.super_nombre
+PRINT 'Migración de sucursal terminada';
+
+INSERT INTO REYES_DE_DATOS.Cliente(
+	cliente_dni,
+	cliente_id_domicilio,
+	cliente_nombre,
+	cliente_apellido,
+	cliente_fecha_registro,
+	cliente_mail,
+	cliente_fecha_nacimiento
+	)
+	SELECT DISTINCT
+		m.CLIENTE_DNI,
+		d.id_domicilio,
+		m.CLIENTE_NOMBRE,
+		m.CLIENTE_APELLIDO,
+		m.CLIENTE_FECHA_REGISTRO,
+		m.CLIENTE_MAIL,
+		m.CLIENTE_FECHA_NACIMIENTO
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Domicilio d ON m.CLIENTE_DOMICILIO = d.domicilio_direccion
+	WHERE m.CLIENTE_DNI IS NOT NULL
+PRINT 'Migración de cliente terminada';
+
+INSERT INTO REYES_DE_DATOS.Empleado(
+	id_sucursal,
+	empleado_nombre,
+	empleado_apellido,
+	empleado_dni,
+	empleado_fecha_registro,
+	empleado_fecha_nacimiento,
+	empleado_email,
+	empleado_telefono
+	)
+	SELECT DISTINCT
+		s.id_sucursal,
+		m.EMPLEADO_NOMBRE,
+		m.EMPLEADO_APELLIDO,
+		m.EMPLEADO_DNI,
+		m.EMPLEADO_FECHA_REGISTRO,
+		m.EMPLEADO_FECHA_NACIMIENTO,
+		m.EMPLEADO_MAIL,
+		m.EMPLEADO_TELEFONO
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Sucursal s ON m.SUCURSAL_NOMBRE = s.sucursal_numero
+	WHERE m.EMPLEADO_DNI IS NOT NULL
+PRINT 'Migración de empleado terminada';
+
+INSERT INTO REYES_DE_DATOS.Producto(
+	producto_codigo, -- PRODUCTO_NOMBRE
+	id_producto_categoria,
+	id_producto_subcategoria,
+	id_marca,
+	producto_descripcion,
+	producto_precio
+	)
+	SELECT DISTINCT
+		m.PRODUCTO_NOMBRE,
+		c.id_producto_categoria,
+		sc.id_producto_subcategoria,
+		mc.id_producto_marca,
+		m.PRODUCTO_DESCRIPCION,
+		m.PRODUCTO_PRECIO
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Producto_categoria c ON m.PRODUCTO_CATEGORIA = c.producto_categoria_detalle
+		JOIN REYES_DE_DATOS.Producto_subcategoria sc ON m.PRODUCTO_SUB_CATEGORIA = sc.producto_subcategoria_detalle
+		JOIN REYES_DE_DATOS.Producto_marca mc ON m.PRODUCTO_MARCA = mc.producto_marca_detalle
+	WHERE m.PRODUCTO_NOMBRE IS NOT NULL
+PRINT 'Migración de producto terminada';
+
+INSERT INTO REYES_DE_DATOS.Ticket(
+	ticket_numero,
+	id_tipo_comprobante,
+	id_sucursal,
+	id_caja,
+	id_empleado,
+	ticket_fecha_hora,
+	ticket_subtotal,
+	ticket_total,
+	ticket_total_descuento_aplicado,
+	ticket_total_descuento_aplicado_mp,
+	ticket_monto_total_envio
+	)
+	SELECT DISTINCT
+		m.TICKET_NUMERO,
+		tc.id_tipo_comprobante,
+		sc.id_sucursal,
+		c.id_caja,
+		e.id_empleado,
+		m.TICKET_FECHA_HORA,
+		m.TICKET_SUBTOTAL_PRODUCTOS,
+		m.TICKET_TOTAL_TICKET,
+		m.TICKET_TOTAL_DESCUENTO_APLICADO,
+		m.TICKET_TOTAL_DESCUENTO_APLICADO_MP,
+		m.TICKET_TOTAL_ENVIO
+	FROM gd_esquema.Maestra m 
+		JOIN REYES_DE_DATOS.Tipo_Comprobante tc ON m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre
+		JOIN REYES_DE_DATOS.Empleado e ON m.EMPLEADO_DNI = e.empleado_dni
+		JOIN REYES_DE_DATOS.Sucursal sc ON m.SUCURSAL_NOMBRE = sc.sucursal_numero
+		JOIN REYES_DE_DATOS.Caja c ON m.CAJA_NUMERO = c.caja_numero AND m.CAJA_TIPO = c.caja_tipo 
+	WHERE m.TICKET_NUMERO IS NOT NULL
+	ORDER BY m.TICKET_NUMERO
+PRINT 'Migración de Ticket terminada';
+
+INSERT INTO REYES_DE_DATOS.Envio(
+	id_ticket,
+	id_cliente,
+	envio_fecha_programada,
+	envio_horario_inicio,
+	envio_horario_fin,
+	envio_fecha_entrega,
+	envio_estado,
+	envio_costo
+	)
+	SELECT 
+		t.id_ticket,
+		c.id_cliente,
+		m.ENVIO_FECHA_PROGRAMADA,
+		m.ENVIO_HORA_INICIO,
+		m.ENVIO_HORA_FIN,
+		m.ENVIO_FECHA_ENTREGA,
+		m.ENVIO_ESTADO,
+		m.ENVIO_COSTO
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Cliente c ON m.CLIENTE_MAIL = c.cliente_mail
+		join REYES_DE_DATOS.Ticket t on m.TICKET_NUMERO+m.TICKET_SUBTOTAL_PRODUCTOS+m.TICKET_TOTAL_TICKET = t.ticket_numero+t.ticket_subtotal+t.ticket_total
+	WHERE m.TICKET_NUMERO IS NOT NULL
+		AND m.ENVIO_HORA_INICIO IS NOT NULL    
+PRINT 'Migración de envio terminada';
+
+INSERT INTO REYES_DE_DATOS.Item_Ticket(
+	ticket_numero,
+	id_producto,
+	id_tipo_comprobante,
+	id_sucursal,
+	id_promocion,
+	item_ticket_cantidad,
+	item_ticket_precio
+	)
+	SELECT DISTINCT
+		m.TICKET_NUMERO,
+		p.id_producto,
+		tc.id_tipo_comprobante,
+		s.id_sucursal,
+		m.PROMO_CODIGO,
+		m.TICKET_DET_CANTIDAD,
+		m.TICKET_DET_PRECIO
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Sucursal s ON m.SUCURSAL_DIRECCION = s.sucursal_domicilio
+		JOIN REYES_DE_DATOS.Tipo_Comprobante tc ON m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre
+		JOIN REYES_DE_DATOS.Producto p ON m.PRODUCTO_PRECIO = p.producto_precio AND m.PRODUCTO_NOMBRE = p.producto_codigo
+	WHERE m.TICKET_NUMERO IS NOT NULL
+		AND m.PRODUCTO_NOMBRE IS NOT NULL
+		AND m.TICKET_DET_CANTIDAD IS NOT NULL
+		AND m.TICKET_DET_PRECIO IS NOT NULL
+PRINT 'Migración de item ticket terminada';
+
+INSERT INTO REYES_DE_DATOS.Pago(
+	id_tipo_medio_de_pago,
+	id_descuento,
+	pago_fecha,
+	pago_importe,
+	pago_numero_tarjeta,
+	medio_de_pago_cuotas,
+	medio_de_pago_fecha_vencimiento,
+	medio_de_pago_descuento_aplicado
+	)
+	SELECT
+		mp.id_tipo_medio_pago,
+		m.DESCUENTO_CODIGO,
+		m.PAGO_FECHA,
+		m.PAGO_IMPORTE,
+		m.PAGO_TARJETA_NRO,
+		m.PAGO_TARJETA_CUOTAS,
+		m.PAGO_TARJETA_FECHA_VENC,
+		m.PAGO_DESCUENTO_APLICADO
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Tipo_medio_de_pago mp ON m.PAGO_MEDIO_PAGO = mp.medio_de_pago_detalle
+PRINT 'Migración de Pago terminada'; 
+
+INSERT INTO REYES_DE_DATOS.Regla_x_Promocion(
+	id_promocion,
+	id_regla
+	)
+	SELECT DISTINCT
+		m.PROMO_CODIGO,
+		r.id_regla
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Regla r ON m.REGLA_DESCRIPCION = r.regla_descripcion 
+	WHERE m.PROMO_CODIGO IS NOT NULL AND 2 IS NOT NULL
+PRINT 'Migración de regla x promocion terminada';
+
+INSERT INTO REYES_DE_DATOS.Ticket_X_Pago(
+	id_ticket,
+	id_pago
+	)
+	SELECT DISTINCT
+		t.id_ticket,
+		p.id_pago
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Ticket t ON m.TICKET_NUMERO = t.ticket_numero
+		JOIN REYES_DE_DATOS.Pago p ON t.ticket_total = p.pago_importe 
+	WHERE t.id_ticket IS NOT NULL
+		and p.id_pago IS NOT NULL
+PRINT 'Migración de ticket_x_pago terminada';
+
+INSERT INTO REYES_DE_DATOS.Promocion_X_Producto(
+	id_promocion,
+	id_producto
+	)
+	SELECT DISTINCT
+			m.PROMO_CODIGO,
+			p.id_promo
+	FROM gd_esquema.Maestra m
+		JOIN REYES_DE_DATOS.Promocion p ON 
+			m.PROMOCION_DESCRIPCION = p.promo_descripcion 
+			AND m.PROMOCION_FECHA_INICIO = p.promo_fecha_inicio 
+			AND m.PROMOCION_FECHA_FIN = p.promo_fecha_fin
+	WHERE 
+		m.TICKET_NUMERO IS NOT NULL
+		AND m.PROMO_CODIGO IS NOT NULL
+PRINT 'Migración de promocion_x_producto terminada';
+GO
+------------------------------------------------------------------------------------------------
+----- COMPROBACION PARA ROLLBACK -----
+------------------------------------------------------------------------------------------------
+
+IF (
+	EXISTS (SELECT 1 FROM REYES_DE_DATOS.Producto_categoria) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Producto_subcategoria)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Producto_marca)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Tipo_medio_de_pago)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Descuento) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Regla) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Tipo_Comprobante) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Provincia) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Localidad) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Caja) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Domicilio) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Sucursal) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Cliente) 
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Empleado)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Producto)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Ticket)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Envio)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Item_Ticket)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Pago)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Regla_x_Promocion)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Ticket_X_Pago)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion_X_Producto)
+)
+	BEGIN
+		PRINT 'Las tablas fueron migradas correctamente.'	
+	END
+ELSE
+	BEGIN
+		RAISERROR ('Error al migrar una o más tablas', 14, 1)
+	END
+GO
