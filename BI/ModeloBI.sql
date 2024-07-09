@@ -130,8 +130,7 @@ CREATE TABLE BI_REYES_DE_DATOS.BI_hechos_venta(
 	id_ubicacion INT NOT NULL,
 	id_sucursal INT NOT NULL,
 	id_turno INT NOT NULL,
-	id_medio_de_pago INT NOT NULL,
-	--id_tipo_comprobante INT NOT NULL,
+	--id_medio_de_pago INT NOT NULL,
     venta_id_caja INT NOT NULL,
     monto_ventas DECIMAL(10, 2) NOT NULL,
     monto_descuentos_aplicados DECIMAL(10, 2),
@@ -346,31 +345,35 @@ PRINT 'Migración de BI_hechos_envio terminada'
 GO
 ------------------------------------------------------------ Venta
 INSERT INTO BI_REYES_DE_DATOS.BI_hechos_venta(
-	id_ticket,
-	venta_numero,
-	venta_id_tipo_comprobante,
-    venta_id_sucursal,
+	id_tiempo,
+	id_ubicacion,
+	id_sucursal,
+	id_turno,
+	--id_medio_de_pago,
     venta_id_caja,
-    venta_id_empleado,
-    ticket_fecha_hora,
-    venta_total,
-    ticket_total_descuento_aplicado,
-	ticket_monto_total_envio
+    monto_ventas,
+    monto_descuentos_aplicados
 )
 SELECT
-	t.id_ticket,
-	ticket_numero, -- TICKET_NUMERO
-    id_tipo_comprobante,
-    id_sucursal,
-    id_caja,
-    id_empleado,
-    ticket_fecha_hora,
-    ticket_total,
-    t.ticket_total_descuento_aplicado,
-	ticket_monto_total_envio
+	tp.id_tiempo,
+	u.id_ubicacion,
+	s.id_sucursal,
+	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
+	t.id_caja,
+	sum(t.ticket_total),
+	sum(t.ticket_total_descuento_aplicado)
 FROM REYES_DE_DATOS.Ticket t
-    JOIN REYES_DE_DATOS.Ticket_X_Pago x on t.id_ticket = x.id_ticket
-    JOIN REYES_DE_DATOS.Pago p on x.id_pago = p.id_pago;
+	JOIN BI_REYES_DE_DATOS.BI_Tiempo tp on
+		year(t.ticket_fecha_hora) = tp.anio
+		and month(t.ticket_fecha_hora) = tp.mes
+		and BI_REYES_DE_DATOS.cuatrimestre(month(t.ticket_fecha_hora)) = tp.cuatrimestre
+	JOIN BI_REYES_DE_DATOS.BI_Sucursal s on s.id_sucursal = t.id_sucursal
+	JOIN BI_REYES_DE_DATOS.BI_Ubicacion u on u.direccion = s.sucursal_domicilio
+GROUP BY tp.id_tiempo,
+	u.id_ubicacion,
+	s.id_sucursal,
+	BI_REYES_DE_DATOS.turno(CAST(t.ticket_fecha_hora AS TIME)),
+	t.id_caja
 PRINT 'Migración de BI_hechos_venta terminada' --si tira error aca todavia no se que es, no tiene sentido porque no esta vinculada con producto
 GO
 ------------------------------------------------------------ Promocion
@@ -384,6 +387,7 @@ SELECT
 FROM REYES_DE_DATOS.Promocion
 PRINT 'Migración de BI_Promo terminada'
 GO
+------------------------------------------------------------ Pago
 ----- ----- ----- ----- ----- 
 ----- CREACION DE HECHOS ----- 
 ----- ----- ----- ----- -----
