@@ -406,8 +406,6 @@ INSERT INTO BI_REYES_DE_DATOS.BI_hechos_pago(
 	id_medio_de_pago,
   	monto_pagos,
 	cantidad_pagos
-	--id_ubicacion,
-	--id_rango_etario
 )
 SELECT
 	t.id_tiempo,
