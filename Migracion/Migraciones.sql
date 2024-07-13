@@ -1,10 +1,9 @@
-	USE GD1C2024
+USE GD1C2024
 GO
 
 ------------------------------------------------------------------------------------------------
 ----- DROPEO DE TABLAS (respetar orden establecido) -----
 ------------------------------------------------------------------------------------------------
-
 if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Regla_x_Promocion') begin DROP TABLE REYES_DE_DATOS.Regla_x_Promocion; end
 if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Promocion_X_Producto') begin DROP TABLE REYES_DE_DATOS.Promocion_X_Producto; end
 if exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Promocion_X_Item_Ticket')begin DROP TABLE REYES_DE_DATOS.Promocion_X_Item_Ticket; end
@@ -31,6 +30,7 @@ if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_D
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_marca') begin DROP TABLE REYES_DE_DATOS.Producto_marca; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_subcategoria')begin DROP TABLE REYES_DE_DATOS.Producto_subcategoria; end
 if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'REYES_DE_DATOS' AND TABLE_NAME = 'Producto_categoria') begin DROP TABLE REYES_DE_DATOS.Producto_categoria; end
+
 GO
 
 IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'REYES_DE_DATOS')
@@ -604,8 +604,8 @@ INSERT INTO REYES_DE_DATOS.Envio(
 PRINT 'Migración de envio terminada';
 
 INSERT INTO REYES_DE_DATOS.Item_Ticket(
-	ticket_numero,
 	id_producto,
+	ticket_numero,
 	id_tipo_comprobante,
 	id_sucursal,
 	id_promocion,
@@ -613,8 +613,8 @@ INSERT INTO REYES_DE_DATOS.Item_Ticket(
 	item_ticket_precio
 	)
 	SELECT DISTINCT
-		m.TICKET_NUMERO,
 		p.id_producto,
+		m.TICKET_NUMERO,
 		tc.id_tipo_comprobante,
 		s.id_sucursal,
 		m.PROMO_CODIGO,
@@ -625,6 +625,8 @@ INSERT INTO REYES_DE_DATOS.Item_Ticket(
 		JOIN REYES_DE_DATOS.Tipo_Comprobante tc ON m.TICKET_TIPO_COMPROBANTE = tc.tipo_comprobante_nombre
 		JOIN REYES_DE_DATOS.Producto p ON m.PRODUCTO_PRECIO = p.producto_precio AND m.PRODUCTO_NOMBRE = p.producto_codigo
 	WHERE m.TICKET_NUMERO IS NOT NULL
+		and s.id_sucursal is not null
+		and tc.id_tipo_comprobante is not null
 		AND m.PRODUCTO_NOMBRE IS NOT NULL
 		AND m.TICKET_DET_CANTIDAD IS NOT NULL
 		AND m.TICKET_DET_PRECIO IS NOT NULL
@@ -685,16 +687,25 @@ INSERT INTO REYES_DE_DATOS.Promocion_X_Producto(
 	)
 	SELECT DISTINCT
 			m.PROMO_CODIGO,
-			p.id_promo
+			p.id_producto
 	FROM gd_esquema.Maestra m
-		JOIN REYES_DE_DATOS.Promocion p ON 
-			m.PROMOCION_DESCRIPCION = p.promo_descripcion 
-			AND m.PROMOCION_FECHA_INICIO = p.promo_fecha_inicio 
-			AND m.PROMOCION_FECHA_FIN = p.promo_fecha_fin
+		JOIN REYES_DE_DATOS.Producto p ON m.PRODUCTO_PRECIO = p.producto_precio AND m.PRODUCTO_NOMBRE = p.producto_codigo
 	WHERE 
 		m.TICKET_NUMERO IS NOT NULL
 		AND m.PROMO_CODIGO IS NOT NULL
 PRINT 'Migración de promocion_x_producto terminada';
+GO
+
+INSERT INTO REYES_DE_DATOS.Promocion_X_Item_Ticket(
+	id_promocion,
+	id_item_ticket
+	)
+	SELECT DISTINCT
+			i.id_promocion,
+			i.id_item_ticket
+	FROM REYES_DE_DATOS.Item_Ticket i
+	WHERE i.id_promocion is not null
+PRINT 'Migración de promocion_x_item_ticket terminada';
 GO
 ------------------------------------------------------------------------------------------------
 ----- COMPROBACION PARA ROLLBACK -----
@@ -724,6 +735,7 @@ IF (
 	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Regla_x_Promocion)
 	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Ticket_X_Pago)
 	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion_X_Producto)
+	AND EXISTS (SELECT 1 FROM REYES_DE_DATOS.Promocion_X_Item_Ticket)
 )
 	BEGIN
 		PRINT 'Las tablas fueron migradas correctamente.'	
